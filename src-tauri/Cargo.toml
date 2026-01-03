@@ -15,8 +15,35 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-shell = "2"
+tauri-plugin-store = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+# HTTP Client for Claude API
+reqwest = { version = "0.12", features = ["json", "stream", "rustls-tls"] }
+
+# Async runtime
+tokio = { version = "1", features = ["full", "sync"] }
+
+# PTY for terminal emulation
+portable-pty = "0.8"
+
+# Streaming support
+futures = "0.3"
+
+# UUID for session IDs
+uuid = { version = "1", features = ["v4"] }
+
+# Error handling
+thiserror = "1"
+anyhow = "1"
+
+# Date/time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Tool system
+async-trait = "0.1"
+glob = "0.3"
 
 [profile.release]
 panic = "abort"

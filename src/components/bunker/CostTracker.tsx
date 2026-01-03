@@ -56,7 +56,7 @@ export function CostTracker({ metrics }: CostTrackerProps) {
 
         <Divider />
 
-        {/* Total Saved */}
+        {/* Total Spent */}
         <div className="text-center py-2">
           <motion.div
             className="terminal-text text-lg font-bold"
@@ -66,7 +66,7 @@ export function CostTracker({ metrics }: CostTrackerProps) {
             ${metrics.totalSaved.toFixed(2)}
           </motion.div>
           <div className="text-text-muted text-xs mt-1 heading-text">
-            TOTAL SECURED
+            TOTAL SPENT
           </div>
         </div>
       </div>
@@ -90,10 +90,12 @@ function MetricRow({
       <span className="text-text-muted text-xs">{label}:</span>
       <div className="text-right">
         <span className="metric-text text-sm">{value}</span>
-        <span className="text-safe text-xs ml-2">
-          ▼ -{change}%
-        </span>
-        {saved !== undefined && (
+        {change > 0 && (
+          <span className="text-safe text-xs ml-2">
+            ▼ -{change}%
+          </span>
+        )}
+        {saved !== undefined && saved > 0 && (
           <div className="text-xs">
             <span className="text-text-muted">SAVED: </span>
             <span className="terminal-text">${saved.toFixed(2)}</span>

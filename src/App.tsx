@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════════
 // BUNKER - Main Dashboard Application
-// Fallout-Inspired AI Command Center
+// Fallout-Inspired AI Command Center with Claude & Terminal
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from './components/bunker/Header';
 import { SystemHealth } from './components/bunker/SystemHealth';
@@ -13,20 +13,23 @@ import { OperationsLog } from './components/bunker/OperationsLog';
 import { CostTracker } from './components/bunker/CostTracker';
 import { QuickActions } from './components/bunker/QuickActions';
 import { RosterPanel } from './components/roster';
+import { ChatPanel } from './components/chat';
+import { TerminalPanel } from './components/terminal';
+import { SettingsPanel } from './components/settings';
+import { useSettingsStore, useMetricsStore } from './lib/store';
+import type { ModelStatus, CostMetrics, Operation, QueueTask } from './lib/types';
 import {
-  mockModels,
-  mockQueueTasks,
-  mockOperations,
-  mockCostMetrics,
   mockFlowNodes,
   mockFlowEdges,
 } from './lib/mock-data';
 
-type AppView = 'dashboard' | 'roster';
+type AppView = 'dashboard' | 'roster' | 'terminal' | 'chat';
 
 export default function App() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeView, setActiveView] = useState<AppView>('dashboard');
+  const { openSettings, apiKeyStatuses } = useSettingsStore();
+  const { costSummary, apiCalls, tasks } = useMetricsStore();
 
   // Update time every second
   useEffect(() => {
@@ -36,11 +39,110 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // Load API key statuses on mount
+  useEffect(() => {
+    useSettingsStore.getState().refreshApiKeyStatuses();
+  }, []);
+
+  // Build real model status from API keys
+  const realModels: ModelStatus[] = useMemo(() => {
+    const todayCalls = apiCalls.filter((c) => {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      return c.timestamp >= startOfDay.getTime();
+    });
+
+    return apiKeyStatuses
+      .filter((k) => k.isSet)
+      .map((k) => {
+        const providerCalls = todayCalls.filter((c) => {
+          const keyToProvider: Record<string, string> = {
+            ANTHROPIC_API_KEY: 'claude',
+            OPENAI_API_KEY: 'openai',
+            PERPLEXITY_API_KEY: 'perplexity',
+            GEMINI_API_KEY: 'gemini',
+          };
+          return c.provider === keyToProvider[k.name];
+        });
+
+        const avgResponseTime =
+          providerCalls.length > 0
+            ? Math.round(
+                providerCalls.reduce((sum, c) => sum + c.responseTimeMs, 0) /
+                  providerCalls.length
+              )
+            : 0;
+
+        return {
+          id: k.name,
+          name: k.displayName.toUpperCase(),
+          status: k.isConnected ? 'active' : 'offline',
+          ramUsage: 0, // Cloud APIs don't use RAM
+          ramCapacity: 0,
+          temperature: 0,
+          uptime: k.isConnected ? 'ONLINE' : '---',
+          tasksToday: providerCalls.length,
+          avgResponseTime,
+        } as ModelStatus;
+      });
+  }, [apiKeyStatuses, apiCalls]);
+
+  // Build real cost metrics
+  const realCostMetrics: CostMetrics = useMemo(() => {
+    return {
+      today: costSummary.today,
+      todayVsCloud: 0, // No savings since we're cloud-only
+      savedToday: 0,
+      week: costSummary.week,
+      weekVsCloud: 0,
+      month: costSummary.month,
+      monthVsCloud: 0,
+      totalSaved: costSummary.allTime, // Show total spent instead
+    };
+  }, [costSummary]);
+
+  // Build real operations from tasks
+  const realOperations: Operation[] = useMemo(() => {
+    return tasks.slice(0, 50).map((t) => ({
+      id: t.id,
+      timestamp: new Date(t.timestamp),
+      name: t.type,
+      status: t.status,
+      model: t.model ?? null,
+      duration: t.durationMs,
+      logs: t.logs,
+      output: t.output,
+    }));
+  }, [tasks]);
+
+  // Build queue tasks from active tasks
+  const realQueueTasks: QueueTask[] = useMemo(() => {
+    return tasks
+      .filter((t) => t.status === 'queued' || t.status === 'running')
+      .map((t) => ({
+        id: t.id,
+        timestamp: new Date(t.timestamp),
+        type: t.type,
+        status: t.status,
+        model: t.model ?? null,
+        progress: t.status === 'running' ? 50 : 0, // Estimate progress
+        duration: t.durationMs,
+        estimatedTime: t.durationMs > 0 ? t.durationMs * 2 : 5000,
+      }));
+  }, [tasks]);
+
   // Calculate uptime (mock - 7 days 12 hours 34 minutes + current seconds)
   const getUptime = () => {
     const seconds = currentTime.getSeconds();
     return `7D 12H ${34 + Math.floor(seconds / 60)}M`;
   };
+
+  const navTabs = [
+    { key: 'dashboard', label: 'DASHBOARD', icon: '⌂' },
+    { key: 'roster', label: 'ROSTER', icon: '☰' },
+    { key: 'terminal', label: 'TERMINAL', icon: '▶' },
+    { key: 'chat', label: 'CLAUDE', icon: '⚛' },
+  ];
 
   return (
     <div className="min-h-screen bg-concrete-dark text-text-secondary font-body flex flex-col crt-scanlines">
@@ -55,12 +157,9 @@ export default function App() {
 
       {/* Navigation Tabs */}
       <div className="flex-shrink-0 bg-concrete-medium border-b border-vault-brown/30">
-        <div className="flex items-center px-4">
+        <div className="flex items-center justify-between px-4">
           <nav className="flex gap-1">
-            {[
-              { key: 'dashboard', label: 'DASHBOARD', icon: '\u2302' },
-              { key: 'roster', label: 'ROSTER', icon: '\u2630' },
-            ].map((tab) => (
+            {navTabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveView(tab.key as AppView)}
@@ -76,6 +175,15 @@ export default function App() {
               </button>
             ))}
           </nav>
+
+          {/* Settings Button */}
+          <button
+            onClick={openSettings}
+            className="px-3 py-1 text-xs border border-vault-brown/30 text-text-muted hover:text-vault-yellow hover:border-vault-yellow transition-colors flex items-center gap-1"
+          >
+            <span>⚙</span>
+            SETTINGS
+          </button>
         </div>
       </div>
 
@@ -101,10 +209,10 @@ export default function App() {
                 transition={{ duration: 0.5 }}
               >
                 <SystemHealth
-                  models={mockModels}
-                  totalRam={32}
-                  totalRamUsed={20}
-                  cpuUsage={45}
+                  models={realModels.length > 0 ? realModels : []}
+                  totalRam={0}
+                  totalRamUsed={0}
+                  cpuUsage={0}
                 />
               </motion.div>
 
@@ -128,7 +236,7 @@ export default function App() {
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
                 <LiveQueue
-                  tasks={mockQueueTasks}
+                  tasks={realQueueTasks}
                   onViewDetails={(id) => console.log('View details:', id)}
                   onCancel={(id) => console.log('Cancel:', id)}
                 />
@@ -143,13 +251,13 @@ export default function App() {
               className="h-[220px]"
             >
               <OperationsLog
-                operations={mockOperations}
+                operations={realOperations}
                 onExport={() => console.log('Export logs')}
-                onClear={() => console.log('Clear logs')}
+                onClear={() => useMetricsStore.getState().reset()}
               />
             </motion.div>
           </motion.div>
-        ) : (
+        ) : activeView === 'roster' ? (
           <motion.div
             key="roster"
             initial={{ opacity: 0 }}
@@ -159,16 +267,39 @@ export default function App() {
           >
             <RosterPanel />
           </motion.div>
-        )}
+        ) : activeView === 'terminal' ? (
+          <motion.div
+            key="terminal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex-1 p-4 overflow-hidden"
+          >
+            <TerminalPanel />
+          </motion.div>
+        ) : activeView === 'chat' ? (
+          <motion.div
+            key="chat"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex-1 p-4 overflow-hidden"
+          >
+            <ChatPanel />
+          </motion.div>
+        ) : null}
       </AnimatePresence>
 
       {/* Floating Panels (only on dashboard) */}
       {activeView === 'dashboard' && (
         <div className="fixed top-32 right-4 space-y-4 z-50">
-          <CostTracker metrics={mockCostMetrics} />
+          <CostTracker metrics={realCostMetrics} />
           <QuickActions />
         </div>
       )}
+
+      {/* Settings Modal */}
+      <SettingsPanel />
 
       {/* Boot sequence indicator (shows briefly on load) */}
       <BootSequence />
