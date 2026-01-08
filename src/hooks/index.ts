@@ -4,6 +4,9 @@
 
 export { useTerminal } from './useTerminal';
 export { usePolling } from './usePolling';
+export { useOllamaStatus, useModelStatus } from './useOllamaStatus';
+export { useSystemMetrics, mbToGb, formatBytes, getRamGb } from './useSystemMetrics';
+export type { SystemMetrics } from './useSystemMetrics';
 export {
   usePersistence,
   // Settings API
