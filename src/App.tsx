@@ -39,10 +39,10 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Load API key statuses on mount
-  useEffect(() => {
-    useSettingsStore.getState().refreshApiKeyStatuses();
-  }, []);
+  // TODO: Re-enable when keyring commands are registered in lib.rs
+  // useEffect(() => {
+  //   useSettingsStore.getState().refreshApiKeyStatuses();
+  // }, []);
 
   // Build real model status from API keys
   const realModels: ModelStatus[] = useMemo(() => {
