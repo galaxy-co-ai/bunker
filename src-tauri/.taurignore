@@ -1,0 +1,2 @@
+# Ignore sidecar node_modules during development
+sidecar/node_modules
