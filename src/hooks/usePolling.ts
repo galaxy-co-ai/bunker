@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { SYSTEM_COMMANDS, OLLAMA_COMMANDS, CLOUD_ROUTER_COMMANDS } from '../lib/tauri-commands';
+import { POLLING_INTERVALS, DEFAULTS } from '../lib/config';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -84,17 +85,17 @@ export interface UsePollingReturn extends PollingState {
 // ═══════════════════════════════════════════════════════════════
 
 const DEFAULT_CONFIG: Required<PollingConfig> = {
-  systemMetrics: 2000,
-  ollamaStatus: 3000,
-  cloudCosts: 10000,
-  time: 1000,
+  systemMetrics: POLLING_INTERVALS.SYSTEM_METRICS,
+  ollamaStatus: POLLING_INTERVALS.OLLAMA_STATUS,
+  cloudCosts: POLLING_INTERVALS.CLOUD_COSTS,
+  time: POLLING_INTERVALS.TIME,
   enabled: true,
 };
 
 const DEFAULT_SYSTEM_METRICS: SystemMetrics = {
   cpu_usage: 0,
   memory_used: 0,
-  memory_total: 32 * 1024,
+  memory_total: DEFAULTS.MEMORY_MB,
   memory_percent: 0,
 };
 
