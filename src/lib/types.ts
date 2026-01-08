@@ -105,3 +105,24 @@ export interface OperationsLogProps {
 export interface CostTrackerProps {
   metrics: CostMetrics;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// OLLAMA TYPES
+// ═══════════════════════════════════════════════════════════════
+
+export interface OllamaModelStatus {
+  id: string;
+  name: string;
+  status: string;
+  ram_usage: number;
+  ram_capacity: number;
+  size_gb: number;
+  parameter_size?: string;
+  quantization?: string;
+}
+
+export interface OllamaStatus {
+  online: boolean;
+  models: OllamaModelStatus[];
+  error?: string;
+}
