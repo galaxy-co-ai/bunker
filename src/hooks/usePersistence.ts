@@ -6,6 +6,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { DB_COMMANDS } from '../lib/tauri-commands';
+import { withVaultRetry } from '../lib/retry';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -50,39 +51,54 @@ export interface Workflow {
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Get a setting value from the database
+ * Get a setting value from the database with retry logic
  */
 export async function getSetting(key: string): Promise<string | null> {
-  try {
-    return await invoke<string | null>(DB_COMMANDS.GET_SETTING, { key });
-  } catch (error) {
-    console.error('Failed to get setting:', key, error);
+  const result = await withVaultRetry(
+    () => invoke<string | null>(DB_COMMANDS.GET_SETTING, { key }),
+    (attempt) => console.warn(`Retrying getSetting (attempt ${attempt}):`, key)
+  );
+
+  if (!result.success) {
+    console.error('Failed to get setting after retries:', key, result.error);
     return null;
   }
+
+  return result.data ?? null;
 }
 
 /**
- * Set a setting value in the database
+ * Set a setting value in the database with retry logic
  */
 export async function setSetting(key: string, value: string): Promise<boolean> {
-  try {
-    return await invoke<boolean>(DB_COMMANDS.SET_SETTING, { key, value });
-  } catch (error) {
-    console.error('Failed to set setting:', key, error);
+  const result = await withVaultRetry(
+    () => invoke<boolean>(DB_COMMANDS.SET_SETTING, { key, value }),
+    (attempt) => console.warn(`Retrying setSetting (attempt ${attempt}):`, key)
+  );
+
+  if (!result.success) {
+    console.error('Failed to set setting after retries:', key, result.error);
     return false;
   }
+
+  return result.data ?? false;
 }
 
 /**
- * Get all settings from the database
+ * Get all settings from the database with retry logic
  */
 export async function getAllSettings(): Promise<Setting[]> {
-  try {
-    return await invoke<Setting[]>(DB_COMMANDS.GET_ALL_SETTINGS);
-  } catch (error) {
-    console.error('Failed to get all settings:', error);
+  const result = await withVaultRetry(
+    () => invoke<Setting[]>(DB_COMMANDS.GET_ALL_SETTINGS),
+    (attempt) => console.warn(`Retrying getAllSettings (attempt ${attempt})`)
+  );
+
+  if (!result.success) {
+    console.error('Failed to get all settings after retries:', result.error);
     return [];
   }
+
+  return result.data ?? [];
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -90,43 +106,58 @@ export async function getAllSettings(): Promise<Setting[]> {
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Get a preference value from the database
+ * Get a preference value from the database with retry logic
  */
 export async function getPreference(key: string): Promise<string | null> {
-  try {
-    return await invoke<string | null>(DB_COMMANDS.GET_PREFERENCE, { key });
-  } catch (error) {
-    console.error('Failed to get preference:', key, error);
+  const result = await withVaultRetry(
+    () => invoke<string | null>(DB_COMMANDS.GET_PREFERENCE, { key }),
+    (attempt) => console.warn(`Retrying getPreference (attempt ${attempt}):`, key)
+  );
+
+  if (!result.success) {
+    console.error('Failed to get preference after retries:', key, result.error);
     return null;
   }
+
+  return result.data ?? null;
 }
 
 /**
- * Set a preference value in the database
+ * Set a preference value in the database with retry logic
  */
 export async function setPreference(
   key: string,
   value: string,
   category?: string
 ): Promise<boolean> {
-  try {
-    return await invoke<boolean>(DB_COMMANDS.SET_PREFERENCE, { key, value, category });
-  } catch (error) {
-    console.error('Failed to set preference:', key, error);
+  const result = await withVaultRetry(
+    () => invoke<boolean>(DB_COMMANDS.SET_PREFERENCE, { key, value, category }),
+    (attempt) => console.warn(`Retrying setPreference (attempt ${attempt}):`, key)
+  );
+
+  if (!result.success) {
+    console.error('Failed to set preference after retries:', key, result.error);
     return false;
   }
+
+  return result.data ?? false;
 }
 
 /**
- * Get all preferences in a category
+ * Get all preferences in a category with retry logic
  */
 export async function getPreferencesByCategory(category: string): Promise<Preference[]> {
-  try {
-    return await invoke<Preference[]>(DB_COMMANDS.GET_PREFERENCES_BY_CATEGORY, { category });
-  } catch (error) {
-    console.error('Failed to get preferences by category:', category, error);
+  const result = await withVaultRetry(
+    () => invoke<Preference[]>(DB_COMMANDS.GET_PREFERENCES_BY_CATEGORY, { category }),
+    (attempt) => console.warn(`Retrying getPreferencesByCategory (attempt ${attempt}):`, category)
+  );
+
+  if (!result.success) {
+    console.error('Failed to get preferences after retries:', category, result.error);
     return [];
   }
+
+  return result.data ?? [];
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -134,19 +165,24 @@ export async function getPreferencesByCategory(category: string): Promise<Prefer
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Save a task to history
+ * Save a task to history with retry logic
  */
 export async function saveTask(task: TaskRecord): Promise<boolean> {
-  try {
-    return await invoke<boolean>(DB_COMMANDS.SAVE_TASK, { task });
-  } catch (error) {
-    console.error('Failed to save task:', error);
+  const result = await withVaultRetry(
+    () => invoke<boolean>(DB_COMMANDS.SAVE_TASK, { task }),
+    (attempt) => console.warn(`Retrying saveTask (attempt ${attempt}):`, task.id)
+  );
+
+  if (!result.success) {
+    console.error('Failed to save task after retries:', result.error);
     return false;
   }
+
+  return result.data ?? false;
 }
 
 /**
- * Update a task's status and response
+ * Update a task's status and response with retry logic
  */
 export async function updateTask(
   id: string,
@@ -155,24 +191,34 @@ export async function updateTask(
   tokens?: number,
   cost?: number
 ): Promise<boolean> {
-  try {
-    return await invoke<boolean>(DB_COMMANDS.UPDATE_TASK, { id, status, response, tokens, cost });
-  } catch (error) {
-    console.error('Failed to update task:', id, error);
+  const result = await withVaultRetry(
+    () => invoke<boolean>(DB_COMMANDS.UPDATE_TASK, { id, status, response, tokens, cost }),
+    (attempt) => console.warn(`Retrying updateTask (attempt ${attempt}):`, id)
+  );
+
+  if (!result.success) {
+    console.error('Failed to update task after retries:', id, result.error);
     return false;
   }
+
+  return result.data ?? false;
 }
 
 /**
- * Get recent tasks from history
+ * Get recent tasks from history with retry logic
  */
 export async function getTasks(limit?: number): Promise<TaskRecord[]> {
-  try {
-    return await invoke<TaskRecord[]>(DB_COMMANDS.GET_TASKS, { limit });
-  } catch (error) {
-    console.error('Failed to get tasks:', error);
+  const result = await withVaultRetry(
+    () => invoke<TaskRecord[]>(DB_COMMANDS.GET_TASKS, { limit }),
+    (attempt) => console.warn(`Retrying getTasks (attempt ${attempt})`)
+  );
+
+  if (!result.success) {
+    console.error('Failed to get tasks after retries:', result.error);
     return [];
   }
+
+  return result.data ?? [];
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -180,51 +226,71 @@ export async function getTasks(limit?: number): Promise<TaskRecord[]> {
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Save a workflow
+ * Save a workflow with retry logic
  */
 export async function saveWorkflow(workflow: Workflow): Promise<boolean> {
-  try {
-    return await invoke<boolean>(DB_COMMANDS.SAVE_WORKFLOW, { workflow });
-  } catch (error) {
-    console.error('Failed to save workflow:', error);
+  const result = await withVaultRetry(
+    () => invoke<boolean>(DB_COMMANDS.SAVE_WORKFLOW, { workflow }),
+    (attempt) => console.warn(`Retrying saveWorkflow (attempt ${attempt}):`, workflow.id)
+  );
+
+  if (!result.success) {
+    console.error('Failed to save workflow after retries:', result.error);
     return false;
   }
+
+  return result.data ?? false;
 }
 
 /**
- * Get all workflows
+ * Get all workflows with retry logic
  */
 export async function getWorkflows(): Promise<Workflow[]> {
-  try {
-    return await invoke<Workflow[]>(DB_COMMANDS.GET_WORKFLOWS);
-  } catch (error) {
-    console.error('Failed to get workflows:', error);
+  const result = await withVaultRetry(
+    () => invoke<Workflow[]>(DB_COMMANDS.GET_WORKFLOWS),
+    (attempt) => console.warn(`Retrying getWorkflows (attempt ${attempt})`)
+  );
+
+  if (!result.success) {
+    console.error('Failed to get workflows after retries:', result.error);
     return [];
   }
+
+  return result.data ?? [];
 }
 
 /**
- * Delete a workflow
+ * Delete a workflow with retry logic
  */
 export async function deleteWorkflow(id: string): Promise<boolean> {
-  try {
-    return await invoke<boolean>(DB_COMMANDS.DELETE_WORKFLOW, { id });
-  } catch (error) {
-    console.error('Failed to delete workflow:', id, error);
+  const result = await withVaultRetry(
+    () => invoke<boolean>(DB_COMMANDS.DELETE_WORKFLOW, { id }),
+    (attempt) => console.warn(`Retrying deleteWorkflow (attempt ${attempt}):`, id)
+  );
+
+  if (!result.success) {
+    console.error('Failed to delete workflow after retries:', id, result.error);
     return false;
   }
+
+  return result.data ?? false;
 }
 
 /**
- * Toggle workflow enabled status
+ * Toggle workflow enabled status with retry logic
  */
 export async function toggleWorkflow(id: string, enabled: boolean): Promise<boolean> {
-  try {
-    return await invoke<boolean>(DB_COMMANDS.TOGGLE_WORKFLOW, { id, enabled });
-  } catch (error) {
-    console.error('Failed to toggle workflow:', id, error);
+  const result = await withVaultRetry(
+    () => invoke<boolean>(DB_COMMANDS.TOGGLE_WORKFLOW, { id, enabled }),
+    (attempt) => console.warn(`Retrying toggleWorkflow (attempt ${attempt}):`, id)
+  );
+
+  if (!result.success) {
+    console.error('Failed to toggle workflow after retries:', id, result.error);
     return false;
   }
+
+  return result.data ?? false;
 }
 
 // ═══════════════════════════════════════════════════════════════

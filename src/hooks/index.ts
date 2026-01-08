@@ -7,6 +7,16 @@ export { usePolling } from './usePolling';
 export { useOllamaStatus, useModelStatus } from './useOllamaStatus';
 export { useSystemMetrics, mbToGb, formatBytes, getRamGb } from './useSystemMetrics';
 export type { SystemMetrics } from './useSystemMetrics';
+
+// Re-export retry utilities from lib for convenience
+export {
+  withRetry,
+  withVaultRetry,
+  withCloudRetry,
+  withOllamaRetry,
+  CircuitBreaker,
+} from '../lib/retry';
+export type { RetryConfig, RetryResult } from '../lib/retry';
 export {
   usePersistence,
   // Settings API

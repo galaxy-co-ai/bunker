@@ -33,6 +33,24 @@ export {
 } from './error-handler';
 export type { AppError, ErrorSeverity, Toast } from './error-handler';
 
+// Retry utilities
+export {
+  withRetry,
+  withVaultRetry,
+  withCloudRetry,
+  withOllamaRetry,
+  isNetworkError,
+  isServerError,
+  isDefaultRetryable,
+  CircuitBreaker,
+} from './retry';
+export type {
+  RetryConfig,
+  RetryResult,
+  CircuitState,
+  CircuitBreakerConfig,
+} from './retry';
+
 // App-wide types
 export type {
   ModelStatus,
