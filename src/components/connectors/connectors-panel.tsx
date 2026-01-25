@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Cable, Github, Triangle, Send, Check, Loader2, Link2, Unlink } from "lucide-react";
+import { Cable, Github, Triangle, Send, Check, Loader2, Link2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,13 +52,7 @@ const defaultConnectors: Connector[] = [
     type: "anthropic",
     name: "Anthropic",
     description: "Claude models & API access",
-    icon: (
-      <img
-        src="https://deifkwefumgah.cloudfront.net/shadcnblocks/block/logos/anthropic-icon.svg"
-        alt="Anthropic"
-        className="h-6 w-6 dark:invert"
-      />
-    ),
+    icon: <Sparkles className="h-6 w-6" />,
     connected: false,
   },
   {
