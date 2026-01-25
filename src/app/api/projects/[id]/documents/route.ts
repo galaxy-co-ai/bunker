@@ -47,6 +47,7 @@ const createDocumentSchema = z.object({
   name: z.string().min(1, "Document name is required").max(100),
   content: z.string(),
   docType: z.enum(["brief", "prd", "tad", "other"]).optional(),
+  folder: z.enum(["planning", "building", "shipping"]).optional(),
 });
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
@@ -75,6 +76,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       name: validated.name,
       content: validated.content,
       docType: validated.docType ?? null,
+      folder: validated.folder ?? null,
       createdAt: now,
       updatedAt: now,
     };

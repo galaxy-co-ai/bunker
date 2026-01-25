@@ -48,6 +48,7 @@ export const documents = pgTable("documents", {
   name: text("name").notNull(),
   content: text("content").notNull(),
   docType: text("doc_type", { enum: ["brief", "prd", "tad", "other"] }),
+  folder: text("folder"), // planning, building, shipping
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
 });
