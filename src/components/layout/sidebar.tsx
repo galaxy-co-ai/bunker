@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 import { ProjectList } from "@/components/projects/project-list";
 import { NewProjectDialog } from "@/components/projects/new-project-dialog";
+import { ConnectorsPanel } from "@/components/connectors/connectors-panel";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -73,6 +74,11 @@ export function Sidebar() {
       </div>
 
       <Separator />
+
+      {/* Connectors Button */}
+      <div className="p-3 pb-0">
+        <ConnectorsPanel collapsed={!sidebarOpen} />
+      </div>
 
       {/* Settings Link */}
       <div className="p-3">

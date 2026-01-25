@@ -118,3 +118,33 @@ export type NewSecret = typeof secrets.$inferInsert;
 
 export type Setting = typeof settings.$inferSelect;
 export type NewSetting = typeof settings.$inferInsert;
+
+// Integrations table for connectors
+export const integrations = pgTable("integrations", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(), // github, openai, anthropic, ollama, vercel, neon, telegram
+  name: text("name").notNull(),
+  config: text("config"), // JSON string for credentials/settings
+  connected: integer("connected").default(0),
+  lastChecked: timestamp("last_checked"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Changelog table for project history
+export const changelog = pgTable("changelog", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").references(() => projects.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  excerpt: text("excerpt"),
+  content: text("content"),
+  type: text("type"), // sprint_complete, deploy, milestone, manual
+  imageUrl: text("image_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type Integration = typeof integrations.$inferSelect;
+export type NewIntegration = typeof integrations.$inferInsert;
+
+export type Changelog = typeof changelog.$inferSelect;
+export type NewChangelog = typeof changelog.$inferInsert;
