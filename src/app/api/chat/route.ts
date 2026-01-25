@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { streamText } from "ai";
-import { db, conversations, messages, settings } from "@/lib/db";
+import { db, conversations, messages, settings, integrations } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { createOllamaProvider } from "@/lib/ai/ollama";
 import { createClaudeProvider } from "@/lib/ai/claude";
@@ -31,13 +31,34 @@ async function getApiKey(provider: Provider): Promise<string | null> {
     return "ollama"; // Ollama doesn't need a key
   }
 
+  // First check settings table (backwards compatible)
   const keyName = provider === "anthropic" ? "anthropic_api_key" : "openai_api_key";
   const [setting] = await db
     .select()
     .from(settings)
     .where(eq(settings.key, keyName));
 
-  return setting?.value || null;
+  if (setting?.value) {
+    return setting.value;
+  }
+
+  // Fallback to integrations table (connectors)
+  const integrationType = provider === "anthropic" ? "anthropic" : "openai";
+  const [integration] = await db
+    .select()
+    .from(integrations)
+    .where(eq(integrations.type, integrationType));
+
+  if (integration?.config) {
+    try {
+      const config = JSON.parse(integration.config);
+      return config.apiKey || null;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
 }
 
 // POST /api/chat - Send a message and get streaming AI response

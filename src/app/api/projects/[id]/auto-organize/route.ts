@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { generateObject } from "ai";
-import { db, documents, projects, settings } from "@/lib/db";
+import { db, documents, projects, settings, integrations } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import fs from "fs";
@@ -131,6 +131,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     // Get API key (prefer Claude, fall back to OpenAI)
+    // First check settings table
     const [claudeKeySetting] = await db
       .select()
       .from(settings)
@@ -141,15 +142,48 @@ export async function POST(request: NextRequest, context: RouteContext) {
       .from(settings)
       .where(eq(settings.key, "openai_api_key"));
 
-    const claudeKey = claudeKeySetting?.value;
-    const openaiKey = openaiKeySetting?.value;
+    let claudeKey = claudeKeySetting?.value || null;
+    let openaiKey = openaiKeySetting?.value || null;
+
+    // Fallback to integrations table (connectors)
+    if (!claudeKey) {
+      const [anthropicIntegration] = await db
+        .select()
+        .from(integrations)
+        .where(eq(integrations.type, "anthropic"));
+
+      if (anthropicIntegration?.config) {
+        try {
+          const config = JSON.parse(anthropicIntegration.config);
+          claudeKey = config.apiKey || null;
+        } catch {
+          // Ignore parse errors
+        }
+      }
+    }
+
+    if (!openaiKey) {
+      const [openaiIntegration] = await db
+        .select()
+        .from(integrations)
+        .where(eq(integrations.type, "openai"));
+
+      if (openaiIntegration?.config) {
+        try {
+          const config = JSON.parse(openaiIntegration.config);
+          openaiKey = config.apiKey || null;
+        } catch {
+          // Ignore parse errors
+        }
+      }
+    }
 
     if (!claudeKey && !openaiKey) {
       return NextResponse.json(
         {
           error: {
             code: "NO_API_KEY",
-            message: "No AI API key configured. Please add your Anthropic or OpenAI API key in Settings.",
+            message: "No AI API key configured. Please add your Anthropic or OpenAI API key in Settings or Connectors.",
           },
         },
         { status: 400 }
