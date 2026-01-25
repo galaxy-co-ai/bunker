@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Cable, Github, Triangle, Send, Check, Loader2 } from "lucide-react";
+import { Cable, Github, Triangle, Send, Check, Loader2, Link2, Unlink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -187,21 +187,21 @@ export function ConnectorsPanel({ trigger, collapsed }: ConnectorsPanelProps) {
                 </div>
               </div>
               <Button
-                variant={connector.connected ? "secondary" : "default"}
-                size="sm"
+                variant="ghost"
+                size="icon"
                 onClick={() => handleConnect(connector.id)}
                 disabled={connecting === connector.id}
-                className="shrink-0"
+                className={cn(
+                  "shrink-0 h-8 w-8",
+                  connector.connected && "text-green-600 dark:text-green-400"
+                )}
               >
                 {connecting === connector.id ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : connector.connected ? (
-                  <>
-                    <Check className="h-4 w-4 mr-1" />
-                    Connected
-                  </>
+                  <Check className="h-4 w-4" />
                 ) : (
-                  "Connect"
+                  <Link2 className="h-4 w-4" />
                 )}
               </Button>
             </div>
