@@ -52,3 +52,4 @@ data/
 
 # Drizzle migrations (generated)
 drizzle/
+.env*.local
