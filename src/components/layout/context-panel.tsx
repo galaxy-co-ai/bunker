@@ -30,7 +30,7 @@ export function ContextPanel() {
       <Button
         variant="ghost"
         size="icon"
-        className="fixed right-0 top-20 h-6 w-6 rounded-l-full border border-r-0 border-border bg-background shadow-sm z-20 translate-x-0"
+        className="fixed right-0 top-4 h-6 w-6 rounded-l-full border border-r-0 border-border bg-background shadow-sm z-20 translate-x-0"
         style={{ right: contextPanelOpen ? "318px" : "0px" }}
         onClick={toggleContextPanel}
       >
@@ -51,7 +51,7 @@ export function ContextPanel() {
       {contextPanelOpen && (
         <>
           {/* Header */}
-          <div className="flex h-14 items-center px-4">
+          <div className="flex h-14 items-center justify-center px-4">
             <h2 className="font-semibold">Context</h2>
           </div>
 

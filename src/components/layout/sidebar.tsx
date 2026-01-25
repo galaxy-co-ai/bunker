@@ -100,7 +100,7 @@ export function Sidebar() {
       <Button
         variant="ghost"
         size="icon"
-        className="absolute -right-3 top-20 h-6 w-6 rounded-full border border-border bg-background shadow-sm"
+        className="absolute -right-3 top-4 z-10 h-6 w-6 rounded-full border border-border bg-background shadow-sm"
         onClick={toggleSidebar}
       >
         {sidebarOpen ? (
