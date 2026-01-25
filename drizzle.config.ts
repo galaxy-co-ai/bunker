@@ -8,4 +8,6 @@ export default {
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
+  // Exclude Titus memory tables - managed separately (see src/lib/db/TITUS_TABLES.md)
+  tablesFilter: ["!titus_*"],
 } satisfies Config;
