@@ -12,11 +12,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id: conversationId } = await params;
 
     // Verify conversation exists
-    const conversation = db
+    const [conversation] = await db
       .select()
       .from(conversations)
-      .where(eq(conversations.id, conversationId))
-      .get();
+      .where(eq(conversations.id, conversationId));
 
     if (!conversation) {
       return NextResponse.json(
@@ -25,12 +24,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const conversationMessages = db
+    const conversationMessages = await db
       .select()
       .from(messages)
       .where(eq(messages.conversationId, conversationId))
-      .orderBy(asc(messages.createdAt))
-      .all();
+      .orderBy(asc(messages.createdAt));
 
     return NextResponse.json(conversationMessages);
   } catch (error) {

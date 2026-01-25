@@ -7,11 +7,10 @@ import { randomUUID } from "crypto";
 // GET /api/projects - List all projects
 export async function GET() {
   try {
-    const allProjects = db
+    const allProjects = await db
       .select()
       .from(projects)
-      .orderBy(desc(projects.updatedAt))
-      .all();
+      .orderBy(desc(projects.updatedAt));
 
     return NextResponse.json({ projects: allProjects });
   } catch (error) {
@@ -46,13 +45,12 @@ export async function POST(request: NextRequest) {
       settings: null,
     };
 
-    db.insert(projects).values(newProject).run();
+    await db.insert(projects).values(newProject);
 
-    const created = db
+    const [created] = await db
       .select()
       .from(projects)
-      .where(eq(projects.id, newProject.id))
-      .get();
+      .where(eq(projects.id, newProject.id));
 
     return NextResponse.json({ project: created }, { status: 201 });
   } catch (error) {

@@ -11,11 +11,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
 
-    const existing = db
+    const [existing] = await db
       .select()
       .from(sprints)
-      .where(eq(sprints.id, id))
-      .get();
+      .where(eq(sprints.id, id));
 
     if (!existing) {
       return NextResponse.json(
@@ -33,19 +32,17 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const now = new Date();
 
-    db.update(sprints)
+    await db.update(sprints)
       .set({
         status: "completed",
         completedAt: now,
       })
-      .where(eq(sprints.id, id))
-      .run();
+      .where(eq(sprints.id, id));
 
-    const updated = db
+    const [updated] = await db
       .select()
       .from(sprints)
-      .where(eq(sprints.id, id))
-      .get();
+      .where(eq(sprints.id, id));
 
     return NextResponse.json({ sprint: updated });
   } catch (error) {

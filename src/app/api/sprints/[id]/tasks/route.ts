@@ -14,11 +14,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id: sprintId } = await params;
 
     // Verify sprint exists
-    const sprint = db
+    const [sprint] = await db
       .select()
       .from(sprints)
-      .where(eq(sprints.id, sprintId))
-      .get();
+      .where(eq(sprints.id, sprintId));
 
     if (!sprint) {
       return NextResponse.json(
@@ -27,12 +26,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const sprintTasks = db
+    const sprintTasks = await db
       .select()
       .from(tasks)
       .where(eq(tasks.sprintId, sprintId))
-      .orderBy(asc(tasks.orderIndex))
-      .all();
+      .orderBy(asc(tasks.orderIndex));
 
     return NextResponse.json({ tasks: sprintTasks });
   } catch (error) {
@@ -57,11 +55,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const validated = createTaskSchema.parse(body);
 
     // Verify sprint exists
-    const sprint = db
+    const [sprint] = await db
       .select()
       .from(sprints)
-      .where(eq(sprints.id, sprintId))
-      .get();
+      .where(eq(sprints.id, sprintId));
 
     if (!sprint) {
       return NextResponse.json(
@@ -71,11 +68,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get the next order index
-    const maxOrderResult = db
+    const [maxOrderResult] = await db
       .select({ maxOrder: sql<number>`MAX(order_index)` })
       .from(tasks)
-      .where(eq(tasks.sprintId, sprintId))
-      .get();
+      .where(eq(tasks.sprintId, sprintId));
 
     const nextOrder = (maxOrderResult?.maxOrder ?? -1) + 1;
 
@@ -91,13 +87,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       completedAt: null,
     };
 
-    db.insert(tasks).values(newTask).run();
+    await db.insert(tasks).values(newTask);
 
-    const created = db
+    const [created] = await db
       .select()
       .from(tasks)
-      .where(eq(tasks.id, newTask.id))
-      .get();
+      .where(eq(tasks.id, newTask.id));
 
     return NextResponse.json({ task: created }, { status: 201 });
   } catch (error) {

@@ -18,11 +18,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id: projectId } = await params;
 
     // Verify project exists
-    const project = db
+    const [project] = await db
       .select()
       .from(projects)
-      .where(eq(projects.id, projectId))
-      .get();
+      .where(eq(projects.id, projectId));
 
     if (!project) {
       return NextResponse.json(
@@ -31,12 +30,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const projectConversations = db
+    const projectConversations = await db
       .select()
       .from(conversations)
       .where(eq(conversations.projectId, projectId))
-      .orderBy(desc(conversations.updatedAt))
-      .all();
+      .orderBy(desc(conversations.updatedAt));
 
     return NextResponse.json(projectConversations);
   } catch (error) {
@@ -54,11 +52,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { id: projectId } = await params;
 
     // Verify project exists
-    const project = db
+    const [project] = await db
       .select()
       .from(projects)
-      .where(eq(projects.id, projectId))
-      .get();
+      .where(eq(projects.id, projectId));
 
     if (!project) {
       return NextResponse.json(
@@ -81,7 +78,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const now = new Date();
     const id = crypto.randomUUID();
 
-    db.insert(conversations)
+    await db.insert(conversations)
       .values({
         id,
         projectId,
@@ -89,14 +86,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         modelId: modelId || null,
         createdAt: now,
         updatedAt: now,
-      })
-      .run();
+      });
 
-    const newConversation = db
+    const [newConversation] = await db
       .select()
       .from(conversations)
-      .where(eq(conversations.id, id))
-      .get();
+      .where(eq(conversations.id, id));
 
     return NextResponse.json(newConversation, { status: 201 });
   } catch (error) {

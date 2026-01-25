@@ -21,11 +21,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
     const validated = updateTaskSchema.parse(body);
 
-    const existing = db
+    const [existing] = await db
       .select()
       .from(tasks)
-      .where(eq(tasks.id, id))
-      .get();
+      .where(eq(tasks.id, id));
 
     if (!existing) {
       return NextResponse.json(
@@ -54,16 +53,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       updateData.orderIndex = validated.orderIndex;
     }
 
-    db.update(tasks)
+    await db.update(tasks)
       .set(updateData)
-      .where(eq(tasks.id, id))
-      .run();
+      .where(eq(tasks.id, id));
 
-    const updated = db
+    const [updated] = await db
       .select()
       .from(tasks)
-      .where(eq(tasks.id, id))
-      .get();
+      .where(eq(tasks.id, id));
 
     return NextResponse.json({ task: updated });
   } catch (error) {
@@ -93,11 +90,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
 
-    const existing = db
+    const [existing] = await db
       .select()
       .from(tasks)
-      .where(eq(tasks.id, id))
-      .get();
+      .where(eq(tasks.id, id));
 
     if (!existing) {
       return NextResponse.json(
@@ -106,7 +102,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    db.delete(tasks).where(eq(tasks.id, id)).run();
+    await db.delete(tasks).where(eq(tasks.id, id));
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

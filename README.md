@@ -87,9 +87,11 @@ open http://localhost:3000
 npm install
 ```
 
-### 2. Initialize Database
+### 2. Set Up Database
 
-The SQLite database is created automatically on first run at `./data/bunker.db`.
+1. Create a database at [neon.tech](https://neon.tech)
+2. Copy the connection string
+3. Set the `DATABASE_URL` environment variable (or add to Vercel)
 
 ### 3. Start the App
 
@@ -183,7 +185,7 @@ Toggle the context panel with the button on the right edge or `Ctrl + .`
 | Styling | Tailwind CSS v4 |
 | Components | shadcn/ui |
 | State | Zustand (client), React Query (server) |
-| Database | SQLite via better-sqlite3 |
+| Database | Neon Postgres (serverless) |
 | ORM | Drizzle ORM |
 | AI SDK | Vercel AI SDK |
 | Validation | Zod |
@@ -214,7 +216,7 @@ bunker/
 │   │   └── crypto/             # Secrets encryption
 │   ├── hooks/                  # React hooks
 │   └── stores/                 # Zustand stores
-├── data/                       # SQLite database (auto-created)
+├── drizzle/                    # Database migrations
 └── project-planning-docs/      # Planning documentation
 ```
 
@@ -290,6 +292,7 @@ bunker/
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `DATABASE_URL` | Neon Postgres connection string | **Required** |
 | `OLLAMA_BASE_URL` | Ollama API endpoint | `http://localhost:11434/v1` |
 | `BUNKER_SECRET_KEY` | Encryption key for secrets | Auto-generated |
 

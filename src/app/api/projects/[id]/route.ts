@@ -12,11 +12,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
 
-    const project = db
+    const [project] = await db
       .select()
       .from(projects)
-      .where(eq(projects.id, id))
-      .get();
+      .where(eq(projects.id, id));
 
     if (!project) {
       return NextResponse.json(
@@ -49,11 +48,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
     const validated = updateProjectSchema.parse(body);
 
-    const existing = db
+    const [existing] = await db
       .select()
       .from(projects)
-      .where(eq(projects.id, id))
-      .get();
+      .where(eq(projects.id, id));
 
     if (!existing) {
       return NextResponse.json(
@@ -62,19 +60,17 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    db.update(projects)
+    await db.update(projects)
       .set({
         ...validated,
         updatedAt: new Date(),
       })
-      .where(eq(projects.id, id))
-      .run();
+      .where(eq(projects.id, id));
 
-    const updated = db
+    const [updated] = await db
       .select()
       .from(projects)
-      .where(eq(projects.id, id))
-      .get();
+      .where(eq(projects.id, id));
 
     return NextResponse.json({ project: updated });
   } catch (error) {
@@ -104,11 +100,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
 
-    const existing = db
+    const [existing] = await db
       .select()
       .from(projects)
-      .where(eq(projects.id, id))
-      .get();
+      .where(eq(projects.id, id));
 
     if (!existing) {
       return NextResponse.json(
@@ -118,11 +113,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Delete related data (cascading should handle this, but explicit for clarity)
-    db.delete(secrets).where(eq(secrets.projectId, id)).run();
-    db.delete(conversations).where(eq(conversations.projectId, id)).run();
-    db.delete(documents).where(eq(documents.projectId, id)).run();
-    db.delete(sprints).where(eq(sprints.projectId, id)).run();
-    db.delete(projects).where(eq(projects.id, id)).run();
+    await db.delete(secrets).where(eq(secrets.projectId, id));
+    await db.delete(conversations).where(eq(conversations.projectId, id));
+    await db.delete(documents).where(eq(documents.projectId, id));
+    await db.delete(sprints).where(eq(sprints.projectId, id));
+    await db.delete(projects).where(eq(projects.id, id));
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

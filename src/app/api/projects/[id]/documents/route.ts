@@ -14,11 +14,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id: projectId } = await params;
 
     // Verify project exists
-    const project = db
+    const [project] = await db
       .select()
       .from(projects)
-      .where(eq(projects.id, projectId))
-      .get();
+      .where(eq(projects.id, projectId));
 
     if (!project) {
       return NextResponse.json(
@@ -27,12 +26,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const projectDocuments = db
+    const projectDocuments = await db
       .select()
       .from(documents)
       .where(eq(documents.projectId, projectId))
-      .orderBy(desc(documents.updatedAt))
-      .all();
+      .orderBy(desc(documents.updatedAt));
 
     return NextResponse.json({ documents: projectDocuments });
   } catch (error) {
@@ -58,11 +56,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const validated = createDocumentSchema.parse(body);
 
     // Verify project exists
-    const project = db
+    const [project] = await db
       .select()
       .from(projects)
-      .where(eq(projects.id, projectId))
-      .get();
+      .where(eq(projects.id, projectId));
 
     if (!project) {
       return NextResponse.json(
@@ -82,13 +79,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       updatedAt: now,
     };
 
-    db.insert(documents).values(newDocument).run();
+    await db.insert(documents).values(newDocument);
 
-    const created = db
+    const [created] = await db
       .select()
       .from(documents)
-      .where(eq(documents.id, newDocument.id))
-      .get();
+      .where(eq(documents.id, newDocument.id));
 
     return NextResponse.json({ document: created }, { status: 201 });
   } catch (error) {

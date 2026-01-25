@@ -12,11 +12,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
 
-    const document = db
+    const [document] = await db
       .select()
       .from(documents)
-      .where(eq(documents.id, id))
-      .get();
+      .where(eq(documents.id, id));
 
     if (!document) {
       return NextResponse.json(
@@ -48,11 +47,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
     const validated = updateDocumentSchema.parse(body);
 
-    const existing = db
+    const [existing] = await db
       .select()
       .from(documents)
-      .where(eq(documents.id, id))
-      .get();
+      .where(eq(documents.id, id));
 
     if (!existing) {
       return NextResponse.json(
@@ -61,19 +59,17 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    db.update(documents)
+    await db.update(documents)
       .set({
         ...validated,
         updatedAt: new Date(),
       })
-      .where(eq(documents.id, id))
-      .run();
+      .where(eq(documents.id, id));
 
-    const updated = db
+    const [updated] = await db
       .select()
       .from(documents)
-      .where(eq(documents.id, id))
-      .get();
+      .where(eq(documents.id, id));
 
     return NextResponse.json({ document: updated });
   } catch (error) {
@@ -103,11 +99,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
 
-    const existing = db
+    const [existing] = await db
       .select()
       .from(documents)
-      .where(eq(documents.id, id))
-      .get();
+      .where(eq(documents.id, id));
 
     if (!existing) {
       return NextResponse.json(
@@ -116,7 +111,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    db.delete(documents).where(eq(documents.id, id)).run();
+    await db.delete(documents).where(eq(documents.id, id));
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

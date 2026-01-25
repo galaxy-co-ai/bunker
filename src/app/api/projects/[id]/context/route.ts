@@ -13,11 +13,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id: projectId } = await params;
 
     // Verify project exists
-    const project = db
+    const [project] = await db
       .select()
       .from(projects)
-      .where(eq(projects.id, projectId))
-      .get();
+      .where(eq(projects.id, projectId));
 
     if (!project) {
       return NextResponse.json(
@@ -26,7 +25,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const context = buildProjectContext(projectId);
+    const context = await buildProjectContext(projectId);
 
     return NextResponse.json({ context });
   } catch (error) {

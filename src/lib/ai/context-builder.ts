@@ -70,12 +70,12 @@ export function buildContextString(context: ProjectContext): string {
 }
 
 // Get project context from database
-export function getProjectContext(options: ContextOptions): ProjectContext | null {
+export async function getProjectContext(options: ContextOptions): Promise<ProjectContext | null> {
   const { projectId, includeDocuments = true, includeActiveSprint = true, maxDocuments = 5 } =
     options;
 
   // Get project
-  const project = db.select().from(projects).where(eq(projects.id, projectId)).get();
+  const [project] = await db.select().from(projects).where(eq(projects.id, projectId));
 
   if (!project) {
     return null;
@@ -92,19 +92,17 @@ export function getProjectContext(options: ContextOptions): ProjectContext | nul
 
   // Get active sprint
   if (includeActiveSprint) {
-    const activeSprint = db
+    const [activeSprint] = await db
       .select()
       .from(sprints)
       .where(eq(sprints.projectId, projectId))
-      .orderBy(desc(sprints.createdAt))
-      .get();
+      .orderBy(desc(sprints.createdAt));
 
     if (activeSprint && activeSprint.status === "active") {
-      const sprintTasks = db
+      const sprintTasks = await db
         .select()
         .from(tasks)
-        .where(eq(tasks.sprintId, activeSprint.id))
-        .all();
+        .where(eq(tasks.sprintId, activeSprint.id));
 
       context.activeSprint = {
         name: activeSprint.name,
@@ -119,13 +117,12 @@ export function getProjectContext(options: ContextOptions): ProjectContext | nul
 
   // Get documents
   if (includeDocuments) {
-    const projectDocs = db
+    const projectDocs = await db
       .select()
       .from(documents)
       .where(eq(documents.projectId, projectId))
       .orderBy(desc(documents.updatedAt))
-      .limit(maxDocuments)
-      .all();
+      .limit(maxDocuments);
 
     context.documents = projectDocs.map((doc) => ({
       name: doc.name,
@@ -138,8 +135,8 @@ export function getProjectContext(options: ContextOptions): ProjectContext | nul
 }
 
 // Main function to build context for a project
-export function buildProjectContext(projectId: string): string | null {
-  const context = getProjectContext({
+export async function buildProjectContext(projectId: string): Promise<string | null> {
+  const context = await getProjectContext({
     projectId,
     includeDocuments: true,
     includeActiveSprint: true,

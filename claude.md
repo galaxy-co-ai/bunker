@@ -20,7 +20,7 @@ A unified dashboard that keeps all project files, plans, and context in one plac
 | Language | TypeScript (strict mode) |
 | Styling | Tailwind CSS + shadcn/ui |
 | State | Zustand (client), React Query (server) |
-| Database | SQLite via better-sqlite3 + Drizzle ORM |
+| Database | Neon Postgres + Drizzle ORM |
 | AI | Vercel AI SDK (Ollama, Claude API, OpenAI API) |
 | Validation | Zod |
 | Forms | React Hook Form |
@@ -29,10 +29,9 @@ A unified dashboard that keeps all project files, plans, and context in one plac
 
 ## Constraints
 
-- **100% local** — no cloud dependency, no auth, no accounts
-- **SQLite only** — no external database server
-- **Desktop-first** — primary use case is dev workstation
-- **Ollama required** — must integrate with local models
+- **No auth** — no accounts required
+- **Neon Postgres** — serverless database for Vercel deployment
+- **Ollama optional** — integrates with local models when available
 
 ---
 

@@ -14,11 +14,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id: projectId } = await params;
 
     // Verify project exists
-    const project = db
+    const [project] = await db
       .select()
       .from(projects)
-      .where(eq(projects.id, projectId))
-      .get();
+      .where(eq(projects.id, projectId));
 
     if (!project) {
       return NextResponse.json(
@@ -27,12 +26,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const projectSprints = db
+    const projectSprints = await db
       .select()
       .from(sprints)
       .where(eq(sprints.projectId, projectId))
-      .orderBy(desc(sprints.createdAt))
-      .all();
+      .orderBy(desc(sprints.createdAt));
 
     return NextResponse.json({ sprints: projectSprints });
   } catch (error) {
@@ -58,11 +56,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const validated = createSprintSchema.parse(body);
 
     // Verify project exists
-    const project = db
+    const [project] = await db
       .select()
       .from(projects)
-      .where(eq(projects.id, projectId))
-      .get();
+      .where(eq(projects.id, projectId));
 
     if (!project) {
       return NextResponse.json(
@@ -83,13 +80,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       completedAt: null,
     };
 
-    db.insert(sprints).values(newSprint).run();
+    await db.insert(sprints).values(newSprint);
 
-    const created = db
+    const [created] = await db
       .select()
       .from(sprints)
-      .where(eq(sprints.id, newSprint.id))
-      .get();
+      .where(eq(sprints.id, newSprint.id));
 
     return NextResponse.json({ sprint: created }, { status: 201 });
   } catch (error) {

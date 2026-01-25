@@ -19,11 +19,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id: projectId } = await params;
 
     // Verify project exists
-    const project = db
+    const [project] = await db
       .select()
       .from(projects)
-      .where(eq(projects.id, projectId))
-      .get();
+      .where(eq(projects.id, projectId));
 
     if (!project) {
       return NextResponse.json(
@@ -32,7 +31,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const projectSecrets = db
+    const projectSecrets = await db
       .select({
         id: secrets.id,
         key: secrets.key,
@@ -40,8 +39,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         updatedAt: secrets.updatedAt,
       })
       .from(secrets)
-      .where(eq(secrets.projectId, projectId))
-      .all();
+      .where(eq(secrets.projectId, projectId));
 
     return NextResponse.json(projectSecrets);
   } catch (error) {
@@ -59,11 +57,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { id: projectId } = await params;
 
     // Verify project exists
-    const project = db
+    const [project] = await db
       .select()
       .from(projects)
-      .where(eq(projects.id, projectId))
-      .get();
+      .where(eq(projects.id, projectId));
 
     if (!project) {
       return NextResponse.json(
@@ -87,21 +84,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const encryptedValue = encrypt(value);
 
     // Check if secret with this key already exists
-    const existingSecret = db
+    const [existingSecret] = await db
       .select()
       .from(secrets)
-      .where(and(eq(secrets.projectId, projectId), eq(secrets.key, key)))
-      .get();
+      .where(and(eq(secrets.projectId, projectId), eq(secrets.key, key)));
 
     if (existingSecret) {
       // Update existing secret
-      db.update(secrets)
+      await db.update(secrets)
         .set({
           encryptedValue,
           updatedAt: now,
         })
-        .where(eq(secrets.id, existingSecret.id))
-        .run();
+        .where(eq(secrets.id, existingSecret.id));
 
       return NextResponse.json({
         id: existingSecret.id,
@@ -112,7 +107,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Create new secret
     const id = crypto.randomUUID();
-    db.insert(secrets)
+    await db.insert(secrets)
       .values({
         id,
         projectId,
@@ -120,8 +115,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         encryptedValue,
         createdAt: now,
         updatedAt: now,
-      })
-      .run();
+      });
 
     return NextResponse.json(
       {
@@ -155,11 +149,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const existingSecret = db
+    const [existingSecret] = await db
       .select()
       .from(secrets)
-      .where(and(eq(secrets.projectId, projectId), eq(secrets.key, key)))
-      .get();
+      .where(and(eq(secrets.projectId, projectId), eq(secrets.key, key)));
 
     if (!existingSecret) {
       return NextResponse.json(
@@ -168,7 +161,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    db.delete(secrets).where(eq(secrets.id, existingSecret.id)).run();
+    await db.delete(secrets).where(eq(secrets.id, existingSecret.id));
 
     return new Response(null, { status: 204 });
   } catch (error) {

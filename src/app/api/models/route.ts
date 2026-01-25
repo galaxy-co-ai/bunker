@@ -19,17 +19,15 @@ export async function GET() {
     const models: ModelInfo[] = [];
 
     // Check for API keys in settings
-    const anthropicKeySetting = db
+    const [anthropicKeySetting] = await db
       .select()
       .from(settings)
-      .where(eq(settings.key, "anthropic_api_key"))
-      .get();
+      .where(eq(settings.key, "anthropic_api_key"));
 
-    const openaiKeySetting = db
+    const [openaiKeySetting] = await db
       .select()
       .from(settings)
-      .where(eq(settings.key, "openai_api_key"))
-      .get();
+      .where(eq(settings.key, "openai_api_key"));
 
     const hasAnthropicKey = !!anthropicKeySetting?.value;
     const hasOpenAIKey = !!openaiKeySetting?.value;

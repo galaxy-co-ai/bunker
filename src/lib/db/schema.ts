@@ -1,32 +1,32 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, timestamp } from "drizzle-orm/pg-core";
 
 // Task 19: Projects table
-export const projects = sqliteTable("projects", {
+export const projects = pgTable("projects", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
   path: text("path"),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
   settings: text("settings"), // JSON blob for project-specific settings
 });
 
 // Task 20: Sprints table
-export const sprints = sqliteTable("sprints", {
+export const sprints = pgTable("sprints", {
   id: text("id").primaryKey(),
   projectId: text("project_id")
     .notNull()
     .references(() => projects.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  startDate: integer("start_date", { mode: "timestamp" }),
-  endDate: integer("end_date", { mode: "timestamp" }),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
   status: text("status", { enum: ["planned", "active", "completed"] }).notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-  completedAt: integer("completed_at", { mode: "timestamp" }),
+  createdAt: timestamp("created_at").notNull(),
+  completedAt: timestamp("completed_at"),
 });
 
 // Task 21: Tasks table
-export const tasks = sqliteTable("tasks", {
+export const tasks = pgTable("tasks", {
   id: text("id").primaryKey(),
   sprintId: text("sprint_id")
     .notNull()
@@ -35,12 +35,12 @@ export const tasks = sqliteTable("tasks", {
   description: text("description"),
   status: text("status", { enum: ["todo", "in_progress", "done"] }).notNull(),
   orderIndex: integer("order_index").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-  completedAt: integer("completed_at", { mode: "timestamp" }),
+  createdAt: timestamp("created_at").notNull(),
+  completedAt: timestamp("completed_at"),
 });
 
 // Task 22: Documents table
-export const documents = sqliteTable("documents", {
+export const documents = pgTable("documents", {
   id: text("id").primaryKey(),
   projectId: text("project_id")
     .notNull()
@@ -48,50 +48,50 @@ export const documents = sqliteTable("documents", {
   name: text("name").notNull(),
   content: text("content").notNull(),
   docType: text("doc_type", { enum: ["brief", "prd", "tad", "other"] }),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
 });
 
 // Task 23: Conversations table
-export const conversations = sqliteTable("conversations", {
+export const conversations = pgTable("conversations", {
   id: text("id").primaryKey(),
   projectId: text("project_id")
     .notNull()
     .references(() => projects.id, { onDelete: "cascade" }),
   title: text("title"),
   modelId: text("model_id"),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
 });
 
 // Task 23: Messages table
-export const messages = sqliteTable("messages", {
+export const messages = pgTable("messages", {
   id: text("id").primaryKey(),
   conversationId: text("conversation_id")
     .notNull()
     .references(() => conversations.id, { onDelete: "cascade" }),
   role: text("role", { enum: ["user", "assistant", "system"] }).notNull(),
   content: text("content").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  createdAt: timestamp("created_at").notNull(),
 });
 
 // Task 24: Secrets table
-export const secrets = sqliteTable("secrets", {
+export const secrets = pgTable("secrets", {
   id: text("id").primaryKey(),
   projectId: text("project_id")
     .notNull()
     .references(() => projects.id, { onDelete: "cascade" }),
   key: text("key").notNull(),
   encryptedValue: text("encrypted_value").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
 });
 
 // Task 24: Settings table (app-wide singleton)
-export const settings = sqliteTable("settings", {
+export const settings = pgTable("settings", {
   key: text("key").primaryKey(),
   value: text("value").notNull(), // JSON-encoded value
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
 });
 
 // Type exports for use throughout the app

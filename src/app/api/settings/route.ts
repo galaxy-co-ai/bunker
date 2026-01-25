@@ -20,7 +20,7 @@ const updateSettingsSchema = z.record(z.string(), z.string().nullable());
 // GET /api/settings - Get all settings
 export async function GET() {
   try {
-    const allSettings = db.select().from(settings).all();
+    const allSettings = await db.select().from(settings);
 
     // Convert to object format
     const settingsMap: Record<string, string | null> = {};
@@ -57,26 +57,24 @@ export async function PATCH(request: NextRequest) {
     for (const [key, value] of Object.entries(updates)) {
       if (value === null) {
         // Delete the setting
-        db.delete(settings).where(eq(settings.key, key)).run();
+        await db.delete(settings).where(eq(settings.key, key));
       } else {
         // Upsert the setting
-        const existing = db.select().from(settings).where(eq(settings.key, key)).get();
+        const [existing] = await db.select().from(settings).where(eq(settings.key, key));
 
         if (existing) {
-          db.update(settings)
+          await db.update(settings)
             .set({ value, updatedAt: now })
-            .where(eq(settings.key, key))
-            .run();
+            .where(eq(settings.key, key));
         } else {
-          db.insert(settings)
-            .values({ key, value, updatedAt: now })
-            .run();
+          await db.insert(settings)
+            .values({ key, value, updatedAt: now });
         }
       }
     }
 
     // Return updated settings
-    const allSettings = db.select().from(settings).all();
+    const allSettings = await db.select().from(settings);
     const settingsMap: Record<string, string | null> = {};
     for (const setting of allSettings) {
       settingsMap[setting.key] = setting.value;

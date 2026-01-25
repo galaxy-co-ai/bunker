@@ -26,17 +26,16 @@ function getProviderFromModelId(modelId: string): Provider {
   return "ollama";
 }
 
-function getApiKey(provider: Provider): string | null {
+async function getApiKey(provider: Provider): Promise<string | null> {
   if (provider === "ollama") {
     return "ollama"; // Ollama doesn't need a key
   }
 
   const keyName = provider === "anthropic" ? "anthropic_api_key" : "openai_api_key";
-  const setting = db
+  const [setting] = await db
     .select()
     .from(settings)
-    .where(eq(settings.key, keyName))
-    .get();
+    .where(eq(settings.key, keyName));
 
   return setting?.value || null;
 }
@@ -59,11 +58,10 @@ export async function POST(request: NextRequest) {
     const { conversationId, message, modelId, context } = result.data;
 
     // Verify conversation exists
-    const conversation = db
+    const [conversation] = await db
       .select()
       .from(conversations)
-      .where(eq(conversations.id, conversationId))
-      .get();
+      .where(eq(conversations.id, conversationId));
 
     if (!conversation) {
       return new Response(
@@ -74,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     // Determine provider and get API key
     const provider = getProviderFromModelId(modelId);
-    const apiKey = getApiKey(provider);
+    const apiKey = await getApiKey(provider);
 
     if (!apiKey && provider !== "ollama") {
       return new Response(
@@ -92,28 +90,25 @@ export async function POST(request: NextRequest) {
     const userMessageId = crypto.randomUUID();
     const now = new Date();
 
-    db.insert(messages)
+    await db.insert(messages)
       .values({
         id: userMessageId,
         conversationId,
         role: "user",
         content: message,
         createdAt: now,
-      })
-      .run();
+      });
 
     // Update conversation timestamp
-    db.update(conversations)
+    await db.update(conversations)
       .set({ updatedAt: now })
-      .where(eq(conversations.id, conversationId))
-      .run();
+      .where(eq(conversations.id, conversationId));
 
     // Get previous messages for context
-    const previousMessages = db
+    const previousMessages = await db
       .select()
       .from(messages)
-      .where(eq(messages.conversationId, conversationId))
-      .all();
+      .where(eq(messages.conversationId, conversationId));
 
     // Build messages array for AI
     const aiMessages: Array<{ role: "user" | "assistant" | "system"; content: string }> = [];
@@ -159,24 +154,22 @@ export async function POST(request: NextRequest) {
       onFinish: async ({ text }) => {
         // Save assistant message to database
         const assistantMessageId = crypto.randomUUID();
-        db.insert(messages)
+        await db.insert(messages)
           .values({
             id: assistantMessageId,
             conversationId,
             role: "assistant",
             content: text,
             createdAt: new Date(),
-          })
-          .run();
+          });
 
         // Update conversation with model used
-        db.update(conversations)
+        await db.update(conversations)
           .set({
             modelId,
             updatedAt: new Date(),
           })
-          .where(eq(conversations.id, conversationId))
-          .run();
+          .where(eq(conversations.id, conversationId));
       },
     });
 
