@@ -70,6 +70,35 @@ export function Sidebar() {
 
       <Separator />
 
+      {/* Active Project Info */}
+      {activeProjectId && projects && (
+        <>
+          {(() => {
+            const activeProject = projects.find((p) => p.id === activeProjectId);
+            if (!activeProject) return null;
+            return (
+              <div className="p-4">
+                {sidebarOpen ? (
+                  <>
+                    <h2 className="font-semibold text-sm truncate">{activeProject.name}</h2>
+                    {activeProject.path && (
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {activeProject.path}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex justify-center">
+                    <FolderKanban className="h-4 w-4 text-primary" />
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+          <Separator />
+        </>
+      )}
+
       {/* Spacer */}
       <div className="flex-1" />
 
