@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { createOllamaProvider } from "@/lib/ai/ollama";
 import { createClaudeProvider } from "@/lib/ai/claude";
 import { createOpenAIProvider } from "@/lib/ai/openai";
+import { createClawdbotProvider, createBunkerSessionKey } from "@/lib/ai/clawdbot";
 
 const chatRequestSchema = z.object({
   conversationId: z.string(),
@@ -14,9 +15,13 @@ const chatRequestSchema = z.object({
   context: z.string().optional(),
 });
 
-type Provider = "ollama" | "anthropic" | "openai";
+type Provider = "ollama" | "anthropic" | "openai" | "clawdbot";
 
 function getProviderFromModelId(modelId: string): Provider {
+  // Check for Clawdbot first (explicit selection)
+  if (modelId.startsWith("clawdbot")) {
+    return "clawdbot";
+  }
   if (modelId.startsWith("claude")) {
     return "anthropic";
   }
@@ -26,9 +31,19 @@ function getProviderFromModelId(modelId: string): Provider {
   return "ollama";
 }
 
+// Check if Clawdbot should be used as the primary provider
+function shouldUseClawdbot(): boolean {
+  return process.env.AI_PROVIDER === "clawdbot" || !!process.env.CLAWDBOT_GATEWAY_URL;
+}
+
 async function getApiKey(provider: Provider): Promise<string | null> {
   if (provider === "ollama") {
     return "ollama"; // Ollama doesn't need a key
+  }
+
+  if (provider === "clawdbot") {
+    // Clawdbot uses its own token from env
+    return process.env.CLAWDBOT_GATEWAY_TOKEN || "clawdbot";
   }
 
   // First check settings table (backwards compatible)
@@ -160,7 +175,15 @@ export async function POST(request: NextRequest) {
 
     // Create the appropriate provider
     let aiProvider;
-    if (provider === "anthropic") {
+    let effectiveModelId = modelId;
+
+    if (provider === "clawdbot") {
+      // Use Clawdbot with session persistence
+      const sessionKey = createBunkerSessionKey(conversation.projectId, conversationId);
+      aiProvider = createClawdbotProvider({ sessionKey });
+      // Clawdbot uses its own model naming
+      effectiveModelId = modelId.startsWith("clawdbot") ? modelId : "clawdbot:main";
+    } else if (provider === "anthropic") {
       aiProvider = createClaudeProvider(apiKey!);
     } else if (provider === "openai") {
       aiProvider = createOpenAIProvider(apiKey!);
@@ -170,7 +193,7 @@ export async function POST(request: NextRequest) {
 
     // Stream the response
     const streamResult = streamText({
-      model: aiProvider(modelId),
+      model: aiProvider(effectiveModelId),
       messages: aiMessages,
       onFinish: async ({ text }) => {
         // Save assistant message to database

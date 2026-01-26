@@ -4,12 +4,13 @@ import { eq } from "drizzle-orm";
 import { listOllamaModels, isOllamaAvailable } from "@/lib/ai/ollama";
 import { listClaudeModels } from "@/lib/ai/claude";
 import { listOpenAIModels } from "@/lib/ai/openai";
+import { listClawdbotModels, isClawdbotAvailable } from "@/lib/ai/clawdbot";
 
 export interface ModelInfo {
   id: string;
   name: string;
   description?: string;
-  provider: "ollama" | "anthropic" | "openai";
+  provider: "ollama" | "anthropic" | "openai" | "clawdbot";
   available: boolean;
 }
 
@@ -71,12 +72,28 @@ export async function GET() {
       });
     }
 
+    // Check for Clawdbot availability
+    const clawdbotAvailable = await isClawdbotAvailable();
+    if (clawdbotAvailable) {
+      const clawdbotModels = listClawdbotModels();
+      for (const model of clawdbotModels) {
+        models.push({
+          id: model.id,
+          name: model.name,
+          description: model.description,
+          provider: "clawdbot",
+          available: true,
+        });
+      }
+    }
+
     return NextResponse.json({
       models,
       providers: {
         ollama: { available: ollamaAvailable, configured: true },
         anthropic: { available: hasAnthropicKey, configured: hasAnthropicKey },
         openai: { available: hasOpenAIKey, configured: hasOpenAIKey },
+        clawdbot: { available: clawdbotAvailable, configured: clawdbotAvailable },
       },
     });
   } catch (error) {
