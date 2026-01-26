@@ -88,8 +88,8 @@ export function ProjectFilesSync({ projectId, projectPath, collapsed, onSyncComp
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-sm">
-            <FolderSync className="h-3 w-3" />
+          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-sm">
+            <FolderSync className="h-3.5 w-3.5" strokeWidth={1.5} />
           </Button>
         </DialogTrigger>
         <SyncDialogContent

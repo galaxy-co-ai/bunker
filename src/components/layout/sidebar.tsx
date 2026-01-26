@@ -21,6 +21,7 @@ import { useProjectStore } from "@/stores/project-store";
 import { NewProjectDialog } from "@/components/projects/new-project-dialog";
 import { ProjectFilesSync } from "@/components/projects/project-files-sync";
 import { ProjectNewMenu } from "@/components/projects/project-new-menu";
+import { ProjectSettings } from "@/components/projects/project-settings";
 import { ConnectorsPanel } from "@/components/connectors/connectors-panel";
 import { FileTree } from "@/components/context/file-tree";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -110,6 +111,12 @@ export function Sidebar() {
                         projectPath={activeProject.path}
                         collapsed={true}
                       />
+                      <ProjectSettings
+                        projectId={activeProject.id}
+                        projectName={activeProject.name}
+                        projectPath={activeProject.path}
+                        collapsed={true}
+                      />
                     </div>
                   ) : (
                     <>
@@ -119,6 +126,12 @@ export function Sidebar() {
                       />
                       <ProjectFilesSync
                         projectId={activeProject.id}
+                        projectPath={activeProject.path}
+                        collapsed={true}
+                      />
+                      <ProjectSettings
+                        projectId={activeProject.id}
+                        projectName={activeProject.name}
                         projectPath={activeProject.path}
                         collapsed={true}
                       />
