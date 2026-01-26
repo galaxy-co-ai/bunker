@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useChat } from "@/hooks/use-chat";
-import { useTelegramEvents } from "@/hooks/use-telegram-events";
+import { useTelegramEvents, type TelegramMessage } from "@/hooks/use-telegram-events";
 import { ChatMessages } from "./chat-messages";
 import { ChatInput } from "./chat-input";
 import { ModelSelector } from "./model-selector";
@@ -62,7 +62,7 @@ export function ChatInterface({ projectId }: ChatInterfaceProps) {
     messages: telegramMessages,
     clearMessages: clearTelegramMessages,
   } = useTelegramEvents(selectedConversationId, isTelegramModel && !!selectedConversationId, {
-    onMessage: useCallback((message) => {
+    onMessage: useCallback((message: TelegramMessage) => {
       // Refetch messages to get the new message from DB
       refetchMessages?.();
       setWaitingForTelegram(false);

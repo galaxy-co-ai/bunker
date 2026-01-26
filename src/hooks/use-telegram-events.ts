@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 
-interface TelegramMessage {
+export interface TelegramMessage {
   id: string;
   role: "assistant";
   content: string;
