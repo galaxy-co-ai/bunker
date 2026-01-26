@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, MessageSquare, Trash2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Plus, MessageSquare, Loader2, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useChat } from "@/hooks/use-chat";
+import { useTelegramEvents } from "@/hooks/use-telegram-events";
 import { ChatMessages } from "./chat-messages";
 import { ChatInput } from "./chat-input";
 import { ModelSelector } from "./model-selector";
@@ -43,10 +44,43 @@ export function ChatInterface({ projectId }: ChatInterfaceProps) {
     streamingContent,
     sendMessage,
     createConversation,
+    refetchMessages,
   } = useChat({
     conversationId: selectedConversationId,
     projectId,
   });
+
+  // Track if we're waiting for a Telegram response
+  const [waitingForTelegram, setWaitingForTelegram] = useState(false);
+
+  // Check if using Telegram provider
+  const isTelegramModel = selectedModelId?.startsWith("telegram:");
+
+  // Subscribe to Telegram events for real-time updates
+  const {
+    isConnected: telegramConnected,
+    messages: telegramMessages,
+    clearMessages: clearTelegramMessages,
+  } = useTelegramEvents(selectedConversationId, isTelegramModel && !!selectedConversationId, {
+    onMessage: useCallback((message) => {
+      // Refetch messages to get the new message from DB
+      refetchMessages?.();
+      setWaitingForTelegram(false);
+      toast.success("Response received", "Titus responded via Telegram");
+    }, [refetchMessages]),
+    onConnect: useCallback(() => {
+      console.log("Connected to Telegram events");
+    }, []),
+    onDisconnect: useCallback(() => {
+      console.log("Disconnected from Telegram events");
+    }, []),
+  });
+
+  // Clear Telegram messages when conversation changes
+  useEffect(() => {
+    clearTelegramMessages();
+    setWaitingForTelegram(false);
+  }, [selectedConversationId, clearTelegramMessages]);
 
   // Select first conversation when loaded
   useEffect(() => {
@@ -100,12 +134,19 @@ export function ChatInterface({ projectId }: ChatInterfaceProps) {
 
     try {
       const context = includeContext && projectId ? await fetchProjectContext(projectId) : undefined;
-      await sendMessage({
+      const result = await sendMessage({
         message,
         modelId: selectedModelId,
         context: context || undefined,
       });
+
+      // If using Telegram, show waiting state
+      if (isTelegramModel && result?.pendingResponse) {
+        setWaitingForTelegram(true);
+        toast.info("Message sent", "Waiting for Titus to respond via Telegram...");
+      }
     } catch (error) {
+      setWaitingForTelegram(false);
       toast.error("Error", error instanceof Error ? error.message : "Failed to send message");
     }
   };
@@ -191,6 +232,16 @@ export function ChatInterface({ projectId }: ChatInterfaceProps) {
               Include project context
             </label>
           </div>
+          {/* Telegram status indicator */}
+          {isTelegramModel && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Radio className={cn(
+                "h-3 w-3",
+                telegramConnected ? "text-green-500" : "text-yellow-500"
+              )} />
+              {telegramConnected ? "Connected" : "Connecting..."}
+            </div>
+          )}
         </div>
 
         {/* Messages */}
@@ -199,14 +250,17 @@ export function ChatInterface({ projectId }: ChatInterfaceProps) {
           isLoading={isLoadingMessages}
           streamingContent={streamingContent}
           isStreaming={isStreaming}
+          waitingForTelegram={waitingForTelegram}
         />
 
         {/* Input */}
         <ChatInput
           onSend={handleSendMessage}
-          disabled={isStreaming}
+          disabled={isStreaming || waitingForTelegram}
           placeholder={
-            selectedModelId
+            waitingForTelegram
+              ? "Waiting for Titus to respond..."
+              : selectedModelId
               ? "Type a message..."
               : "Select a model to start chatting"
           }

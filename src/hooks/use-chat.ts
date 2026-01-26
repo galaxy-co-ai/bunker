@@ -41,6 +41,7 @@ export function useChat({ conversationId, projectId }: UseChatOptions) {
     data: messages,
     isLoading: isLoadingMessages,
     error: messagesError,
+    refetch: refetchMessages,
   } = useQuery<Message[]>({
     queryKey: ["messages", conversationId],
     queryFn: async () => {
@@ -71,7 +72,7 @@ export function useChat({ conversationId, projectId }: UseChatOptions) {
 
   // Send a message and handle streaming response
   const sendMessage = useCallback(
-    async ({ message, modelId, context }: SendMessageParams) => {
+    async ({ message, modelId, context }: SendMessageParams): Promise<{ content?: string; pendingResponse?: boolean }> => {
       if (!conversationId) throw new Error("No conversation selected");
 
       setIsStreaming(true);
@@ -94,7 +95,21 @@ export function useChat({ conversationId, projectId }: UseChatOptions) {
           throw new Error(error.error?.message || "Failed to send message");
         }
 
-        // Handle streaming response
+        // Check if this is a Telegram response (JSON, not stream)
+        const contentType = response.headers.get("content-type");
+        if (contentType?.includes("application/json")) {
+          // Telegram provider returns JSON immediately
+          const data = await response.json();
+
+          // Refresh messages to show the user message
+          queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
+          queryClient.invalidateQueries({ queryKey: ["conversations", projectId] });
+
+          // Return the response data (includes pendingResponse flag)
+          return data;
+        }
+
+        // Handle streaming response (non-Telegram)
         const reader = response.body?.getReader();
         if (!reader) throw new Error("No response body");
 
@@ -126,7 +141,7 @@ export function useChat({ conversationId, projectId }: UseChatOptions) {
         queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
         queryClient.invalidateQueries({ queryKey: ["conversations", projectId] });
 
-        return fullContent;
+        return { content: fullContent };
       } finally {
         setIsStreaming(false);
         setStreamingContent("");
@@ -146,6 +161,7 @@ export function useChat({ conversationId, projectId }: UseChatOptions) {
     messages,
     isLoadingMessages,
     messagesError,
+    refetchMessages,
 
     // Streaming state
     isStreaming,

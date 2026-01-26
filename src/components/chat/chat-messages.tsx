@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Bot, User } from "lucide-react";
+import { Bot, User, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Message } from "@/lib/db/schema";
@@ -11,6 +11,7 @@ interface ChatMessagesProps {
   isLoading?: boolean;
   streamingContent?: string;
   isStreaming?: boolean;
+  waitingForTelegram?: boolean;
 }
 
 function MessageBubble({
@@ -54,6 +55,7 @@ export function ChatMessages({
   isLoading,
   streamingContent,
   isStreaming,
+  waitingForTelegram,
 }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -107,6 +109,19 @@ export function ChatMessages({
             content={streamingContent}
             isStreaming={true}
           />
+        )}
+        {waitingForTelegram && (
+          <div className="flex gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
+              <Bot className="h-4 w-4" />
+            </div>
+            <div className="rounded-lg px-4 py-2 bg-muted flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm text-muted-foreground">
+                Titus is thinking...
+              </span>
+            </div>
+          </div>
         )}
       </div>
       <div ref={messagesEndRef} />

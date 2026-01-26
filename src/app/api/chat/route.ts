@@ -1,12 +1,13 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { streamText } from "ai";
-import { db, conversations, messages, settings, integrations } from "@/lib/db";
+import { db, conversations, messages, settings, integrations, projects, type Conversation } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { createOllamaProvider } from "@/lib/ai/ollama";
 import { createClaudeProvider } from "@/lib/ai/claude";
 import { createOpenAIProvider } from "@/lib/ai/openai";
 import { createClawdbotProvider, createBunkerSessionKey } from "@/lib/ai/clawdbot";
+import { sendMessage, formatBunkerMessage, getChatId } from "@/lib/telegram/client";
 
 const chatRequestSchema = z.object({
   conversationId: z.string(),
@@ -15,10 +16,14 @@ const chatRequestSchema = z.object({
   context: z.string().optional(),
 });
 
-type Provider = "ollama" | "anthropic" | "openai" | "clawdbot";
+type Provider = "ollama" | "anthropic" | "openai" | "clawdbot" | "telegram";
 
 function getProviderFromModelId(modelId: string): Provider {
-  // Check for Clawdbot first (explicit selection)
+  // Check for Telegram first (sends via Telegram to Titus)
+  if (modelId.startsWith("telegram:")) {
+    return "telegram";
+  }
+  // Check for Clawdbot (explicit selection)
   if (modelId.startsWith("clawdbot")) {
     return "clawdbot";
   }
@@ -44,6 +49,11 @@ async function getApiKey(provider: Provider): Promise<string | null> {
   if (provider === "clawdbot") {
     // Clawdbot uses its own token from env
     return process.env.CLAWDBOT_GATEWAY_TOKEN || "clawdbot";
+  }
+
+  if (provider === "telegram") {
+    // Telegram uses bot token from env
+    return process.env.TELEGRAM_BOT_TOKEN || null;
   }
 
   // First check env vars (highest priority for deployment)
@@ -126,6 +136,11 @@ export async function POST(request: NextRequest) {
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
+    }
+
+    // Handle Telegram provider differently - send to Telegram and return immediately
+    if (provider === "telegram") {
+      return await handleTelegramMessage(conversationId, message, conversation, context);
     }
 
     // Save user message to database
@@ -228,6 +243,107 @@ export async function POST(request: NextRequest) {
     console.error("Chat error:", error);
     return new Response(
       JSON.stringify({ error: { code: "CHAT_FAILED", message: "Failed to process chat" } }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+}
+
+/**
+ * Handle Telegram provider - send message via Telegram instead of streaming AI
+ * Response will come back via webhook
+ */
+async function handleTelegramMessage(
+  conversationId: string,
+  message: string,
+  conversation: Conversation,
+  context?: string
+): Promise<Response> {
+  try {
+    // Get project name for the Bunker prefix
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, conversation.projectId));
+
+    if (!project) {
+      return new Response(
+        JSON.stringify({ error: { code: "NOT_FOUND", message: "Project not found" } }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Save user message to database
+    const userMessageId = crypto.randomUUID();
+    const now = new Date();
+
+    await db.insert(messages).values({
+      id: userMessageId,
+      conversationId,
+      role: "user",
+      content: message,
+      createdAt: now,
+    });
+
+    // Update conversation timestamp
+    await db
+      .update(conversations)
+      .set({ updatedAt: now, modelId: "telegram:titus" })
+      .where(eq(conversations.id, conversationId));
+
+    // Format message with Bunker prefix
+    const formattedMessage = formatBunkerMessage(project.name, message, {
+      conversationTitle: conversation.title || undefined,
+    });
+
+    // Get chat ID and send to Telegram
+    const chatId = getChatId();
+    const telegramMessage = await sendMessage(chatId, formattedMessage, {
+      parse_mode: "Markdown",
+    });
+
+    // Return success - response will come via webhook
+    return new Response(
+      JSON.stringify({
+        success: true,
+        messageId: userMessageId,
+        telegramMessageId: telegramMessage.message_id,
+        status: "sent",
+        pendingResponse: true,
+        provider: "telegram",
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Telegram send error:", error);
+
+    // Check for specific errors
+    if (error instanceof Error) {
+      if (error.message.includes("TELEGRAM_BOT_TOKEN")) {
+        return new Response(
+          JSON.stringify({
+            error: {
+              code: "CONFIG_ERROR",
+              message: "Telegram bot token not configured. Add TELEGRAM_BOT_TOKEN to environment.",
+            },
+          }),
+          { status: 500, headers: { "Content-Type": "application/json" } }
+        );
+      }
+      if (error.message.includes("TELEGRAM_CHAT_ID")) {
+        return new Response(
+          JSON.stringify({
+            error: {
+              code: "CONFIG_ERROR",
+              message: "Telegram chat ID not configured. Add TELEGRAM_CHAT_ID to environment.",
+            },
+          }),
+          { status: 500, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ error: { code: "TELEGRAM_ERROR", message: "Failed to send message to Telegram" } }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }

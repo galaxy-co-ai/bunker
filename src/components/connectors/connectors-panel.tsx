@@ -630,7 +630,22 @@ export function ConnectorsPanel({ trigger, collapsed }: ConnectorsPanelProps) {
                 placeholder="-100123456789"
               />
               <p className="text-xs text-muted-foreground">
-                The chat/channel ID where notifications will be sent.
+                The chat/group ID where Titus (Clawdbot) listens for messages.
+              </p>
+            </div>
+            <div className="space-y-2 pt-2 border-t">
+              <p className="text-sm font-medium">Webhook Setup</p>
+              <p className="text-xs text-muted-foreground">
+                To receive responses from Titus, you need to configure a webhook.
+                Add these environment variables to your Vercel deployment:
+              </p>
+              <div className="bg-muted rounded-md p-3 text-xs font-mono space-y-1">
+                <div>TELEGRAM_BOT_TOKEN=your_bot_token</div>
+                <div>TELEGRAM_CHAT_ID=your_chat_id</div>
+                <div>TELEGRAM_WEBHOOK_SECRET=your_secret</div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Then set up the webhook by calling the setup endpoint after deployment.
               </p>
             </div>
           </div>

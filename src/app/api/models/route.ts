@@ -10,7 +10,7 @@ export interface ModelInfo {
   id: string;
   name: string;
   description?: string;
-  provider: "ollama" | "anthropic" | "openai" | "clawdbot";
+  provider: "ollama" | "anthropic" | "openai" | "clawdbot" | "telegram";
   available: boolean;
 }
 
@@ -88,6 +88,18 @@ export async function GET() {
       }
     }
 
+    // Check for Telegram/Titus availability (sends via Telegram to local Clawdbot)
+    const telegramConfigured = !!process.env.TELEGRAM_BOT_TOKEN && !!process.env.TELEGRAM_CHAT_ID;
+    if (telegramConfigured) {
+      models.push({
+        id: "telegram:titus",
+        name: "Titus (via Telegram)",
+        description: "Local AI agent with file access, code execution, and memory",
+        provider: "telegram",
+        available: true,
+      });
+    }
+
     return NextResponse.json({
       models,
       providers: {
@@ -95,6 +107,7 @@ export async function GET() {
         anthropic: { available: hasAnthropicKey, configured: hasAnthropicKey },
         openai: { available: hasOpenAIKey, configured: hasOpenAIKey },
         clawdbot: { available: clawdbotAvailable, configured: clawdbotAvailable },
+        telegram: { available: telegramConfigured, configured: telegramConfigured },
       },
     });
   } catch (error) {
