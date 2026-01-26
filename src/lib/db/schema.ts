@@ -149,3 +149,19 @@ export type NewIntegration = typeof integrations.$inferInsert;
 
 export type Changelog = typeof changelog.$inferSelect;
 export type NewChangelog = typeof changelog.$inferInsert;
+
+// Media table for images and file uploads
+export const media = pgTable("media", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull(), // bytes
+  data: text("data").notNull(), // base64 encoded
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type Media = typeof media.$inferSelect;
+export type NewMedia = typeof media.$inferInsert;

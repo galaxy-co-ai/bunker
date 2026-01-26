@@ -5,10 +5,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Box,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronUp,
   FolderKanban,
+  FolderTree,
   Plus,
   Settings,
 } from "lucide-react";
@@ -22,6 +24,7 @@ import { NewProjectDialog } from "@/components/projects/new-project-dialog";
 import { ProjectFilesSync } from "@/components/projects/project-files-sync";
 import { ProjectNewMenu } from "@/components/projects/project-new-menu";
 import { ConnectorsPanel } from "@/components/connectors/connectors-panel";
+import { FileTree } from "@/components/context/file-tree";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function Sidebar() {
@@ -31,6 +34,7 @@ export function Sidebar() {
   const { data: projects, isLoading } = useProjects();
   const { activeProjectId, setActiveProjectId } = useProjectStore();
   const [projectsExpanded, setProjectsExpanded] = useState(false);
+  const [filesExpanded, setFilesExpanded] = useState(true);
 
   // Clear stale activeProjectId if it's not in the projects list
   useEffect(() => {
@@ -104,6 +108,29 @@ export function Sidebar() {
                   projectPath={activeProject.path}
                   collapsed={!sidebarOpen}
                 />
+
+                {/* File Tree Section */}
+                {sidebarOpen && activeProject.path && (
+                  <div className="px-4 pt-2">
+                    <button
+                      onClick={() => setFilesExpanded(!filesExpanded)}
+                      className="flex w-full items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {filesExpanded ? (
+                        <ChevronDown className="h-3 w-3" />
+                      ) : (
+                        <ChevronRight className="h-3 w-3" />
+                      )}
+                      <FolderTree className="h-3 w-3" />
+                      <span>Files</span>
+                    </button>
+                    {filesExpanded && (
+                      <div className="mt-2 max-h-48 overflow-y-auto rounded-md border border-border bg-background/50 p-1">
+                        <FileTree projectId={activeProject.id} />
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             );
           })()}
