@@ -1,11 +1,14 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Box,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  FolderKanban,
   Plus,
   Settings,
 } from "lucide-react";
@@ -13,13 +16,35 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
-import { ProjectList } from "@/components/projects/project-list";
+import { useProjects } from "@/hooks/use-projects";
+import { useProjectStore } from "@/stores/project-store";
 import { NewProjectDialog } from "@/components/projects/new-project-dialog";
 import { ConnectorsPanel } from "@/components/connectors/connectors-panel";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { sidebarOpen, toggleSidebar } = useUIStore();
+  const { data: projects, isLoading } = useProjects();
+  const { activeProjectId, setActiveProjectId } = useProjectStore();
+  const [projectsExpanded, setProjectsExpanded] = useState(false);
+
+  // Clear stale activeProjectId if it's not in the projects list
+  useEffect(() => {
+    if (!isLoading && projects && activeProjectId) {
+      const projectExists = projects.some((p) => p.id === activeProjectId);
+      if (!projectExists) {
+        setActiveProjectId(null);
+      }
+    }
+  }, [projects, isLoading, activeProjectId, setActiveProjectId]);
+
+  const handleProjectClick = (projectId: string) => {
+    setActiveProjectId(projectId);
+    router.push(`/projects/${projectId}`);
+    setProjectsExpanded(false);
+  };
 
   return (
     <aside
@@ -45,35 +70,84 @@ export function Sidebar() {
 
       <Separator />
 
-      {/* New Project Button */}
-      <div className="p-3">
-        <NewProjectDialog
-          trigger={
-            <Button
-              variant="outline"
-              className={cn(
-                "w-full justify-start gap-2",
-                !sidebarOpen && "px-0 justify-center"
-              )}
-            >
-              <Plus className="h-4 w-4" />
-              {sidebarOpen && <span>New Project</span>}
-            </Button>
-          }
-        />
-      </div>
-
-      {/* Project List */}
-      <div className="flex-1 overflow-y-auto px-3">
-        {sidebarOpen && (
-          <div className="mb-2 px-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Projects
-          </div>
-        )}
-        <ProjectList collapsed={!sidebarOpen} />
-      </div>
+      {/* Spacer */}
+      <div className="flex-1" />
 
       <Separator />
+
+      {/* Projects Accordion */}
+      <div className="p-3 pb-0">
+        {/* Expanded Content - renders above the button */}
+        {projectsExpanded && sidebarOpen && (
+          <div className="mb-2 rounded-lg border border-border bg-background/50 overflow-hidden">
+            {/* New Project Option */}
+            <NewProjectDialog
+              trigger={
+                <button className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors border-b border-border">
+                  <Plus className="h-4 w-4" />
+                  <span>New Project</span>
+                </button>
+              }
+            />
+
+            {/* Project List */}
+            <div className="max-h-64 overflow-y-auto">
+              {isLoading ? (
+                <div className="p-2 space-y-1">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-8 w-full" />
+                  ))}
+                </div>
+              ) : !projects || projects.length === 0 ? (
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  No projects yet
+                </div>
+              ) : (
+                <div className="py-1">
+                  {projects.map((project) => (
+                    <button
+                      key={project.id}
+                      onClick={() => handleProjectClick(project.id)}
+                      className={cn(
+                        "flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors",
+                        "hover:bg-accent",
+                        activeProjectId === project.id && "bg-accent font-medium"
+                      )}
+                    >
+                      <FolderKanban className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{project.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Projects Toggle Button */}
+        <Button
+          variant="ghost"
+          onClick={() => sidebarOpen && setProjectsExpanded(!projectsExpanded)}
+          className={cn(
+            "w-full justify-start gap-2",
+            !sidebarOpen && "px-0 justify-center",
+            projectsExpanded && "bg-accent"
+          )}
+        >
+          <FolderKanban className="h-4 w-4" />
+          {sidebarOpen && (
+            <>
+              <span>Projects</span>
+              <ChevronUp
+                className={cn(
+                  "ml-auto h-4 w-4 transition-transform",
+                  !projectsExpanded && "rotate-180"
+                )}
+              />
+            </>
+          )}
+        </Button>
+      </div>
 
       {/* Connectors Button */}
       <div className="p-3 pb-0">
