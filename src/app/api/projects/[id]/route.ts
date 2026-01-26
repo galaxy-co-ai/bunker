@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { db, projects, sprints, documents, conversations, secrets } from "@/lib/db";
+import { db, projects, sprints, documents, secrets } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
 interface RouteParams {
@@ -114,7 +114,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     // Delete related data (cascading should handle this, but explicit for clarity)
     await db.delete(secrets).where(eq(secrets.projectId, id));
-    await db.delete(conversations).where(eq(conversations.projectId, id));
     await db.delete(documents).where(eq(documents.projectId, id));
     await db.delete(sprints).where(eq(sprints.projectId, id));
     await db.delete(projects).where(eq(projects.id, id));

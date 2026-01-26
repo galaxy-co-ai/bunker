@@ -64,9 +64,8 @@ export function DeleteProjectDialog({
           <DialogTitle>Delete Project</DialogTitle>
           <DialogDescription>
             Are you sure you want to delete &quot;{project.name}&quot;? This
-            action cannot be undone. All sprints, tasks, documents, and
-            conversations associated with this project will be permanently
-            deleted.
+            action cannot be undone. All sprints, tasks, and documents
+            associated with this project will be permanently deleted.
           </DialogDescription>
         </DialogHeader>
 

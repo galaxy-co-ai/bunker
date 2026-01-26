@@ -4,14 +4,10 @@ import { useState, useEffect } from "react";
 import {
   Cable,
   Github,
-  Triangle,
-  Send,
-  Check,
   Loader2,
   Link2,
   Sparkles,
   Settings2,
-  X,
   AlertCircle,
   CheckCircle2,
   Eye,
@@ -37,9 +33,6 @@ interface ConnectorConfig {
   openai: { apiKey: string };
   anthropic: { apiKey: string };
   ollama: { baseUrl: string };
-  vercel: { token: string };
-  neon: Record<string, never>;
-  telegram: { botToken: string; chatId: string };
 }
 
 type ConnectorType = keyof ConnectorConfig;
@@ -111,37 +104,6 @@ const defaultConnectors: Connector[] = [
     ),
     connected: false,
   },
-  {
-    id: "vercel",
-    type: "vercel",
-    name: "Vercel",
-    description: "Deployment & hosting",
-    icon: <Triangle className="h-6 w-6" />,
-    iconClassName: "dark:invert",
-    connected: false,
-  },
-  {
-    id: "neon",
-    type: "neon",
-    name: "Neon",
-    description: "Postgres database",
-    icon: (
-      <img
-        src="https://neon.tech/favicon/favicon.svg"
-        alt="Neon"
-        className="h-6 w-6"
-      />
-    ),
-    connected: false,
-  },
-  {
-    id: "telegram",
-    type: "telegram",
-    name: "Telegram",
-    description: "Bot notifications for Titus",
-    icon: <Send className="h-6 w-6" />,
-    connected: false,
-  },
 ];
 
 interface ConnectorsPanelProps {
@@ -161,9 +123,6 @@ export function ConnectorsPanel({ trigger, collapsed }: ConnectorsPanelProps) {
   const [openaiKey, setOpenaiKey] = useState("");
   const [anthropicKey, setAnthropicKey] = useState("");
   const [ollamaUrl, setOllamaUrl] = useState("http://localhost:11434");
-  const [vercelToken, setVercelToken] = useState("");
-  const [telegramBotToken, setTelegramBotToken] = useState("");
-  const [telegramChatId, setTelegramChatId] = useState("");
 
   // Password visibility
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
@@ -203,13 +162,6 @@ export function ConnectorsPanel({ trigger, collapsed }: ConnectorsPanelProps) {
                     case "ollama":
                       setOllamaUrl(config.baseUrl || "http://localhost:11434");
                       break;
-                    case "vercel":
-                      setVercelToken(config.token || "");
-                      break;
-                    case "telegram":
-                      setTelegramBotToken(config.botToken || "");
-                      setTelegramChatId(config.chatId || "");
-                      break;
                   }
                 } catch {
                   // Ignore parse errors
@@ -244,12 +196,6 @@ export function ConnectorsPanel({ trigger, collapsed }: ConnectorsPanelProps) {
         return JSON.stringify({ apiKey: anthropicKey });
       case "ollama":
         return JSON.stringify({ baseUrl: ollamaUrl });
-      case "vercel":
-        return JSON.stringify({ token: vercelToken });
-      case "neon":
-        return JSON.stringify({});
-      case "telegram":
-        return JSON.stringify({ botToken: telegramBotToken, chatId: telegramChatId });
     }
   };
 
@@ -381,13 +327,6 @@ export function ConnectorsPanel({ trigger, collapsed }: ConnectorsPanelProps) {
           break;
         case "ollama":
           setOllamaUrl("http://localhost:11434");
-          break;
-        case "vercel":
-          setVercelToken("");
-          break;
-        case "telegram":
-          setTelegramBotToken("");
-          setTelegramChatId("");
           break;
       }
 
@@ -534,122 +473,6 @@ export function ConnectorsPanel({ trigger, collapsed }: ConnectorsPanelProps) {
             </div>
           </div>
         );
-
-      case "vercel":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="vercel-token">Access Token</Label>
-              <div className="relative">
-                <Input
-                  id="vercel-token"
-                  type={showSecrets["vercel-token"] ? "text" : "password"}
-                  value={vercelToken}
-                  onChange={(e) => setVercelToken(e.target.value)}
-                  placeholder="..."
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => toggleSecretVisibility("vercel-token")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showSecrets["vercel-token"] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Create a token at{" "}
-                <a
-                  href="https://vercel.com/account/tokens"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-foreground"
-                >
-                  vercel.com/account/tokens
-                </a>
-              </p>
-            </div>
-          </div>
-        );
-
-      case "neon":
-        return (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-muted">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-              <div>
-                <p className="font-medium">Already Configured</p>
-                <p className="text-xs text-muted-foreground">
-                  Neon is configured via DATABASE_URL environment variable.
-                </p>
-              </div>
-            </div>
-          </div>
-        );
-
-      case "telegram":
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="telegram-bot-token">Bot Token</Label>
-              <div className="relative">
-                <Input
-                  id="telegram-bot-token"
-                  type={showSecrets["telegram-bot-token"] ? "text" : "password"}
-                  value={telegramBotToken}
-                  onChange={(e) => setTelegramBotToken(e.target.value)}
-                  placeholder="123456789:ABC..."
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => toggleSecretVisibility("telegram-bot-token")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showSecrets["telegram-bot-token"] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Get a bot token from{" "}
-                <a
-                  href="https://t.me/botfather"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-foreground"
-                >
-                  @BotFather
-                </a>
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="telegram-chat-id">Chat ID</Label>
-              <Input
-                id="telegram-chat-id"
-                value={telegramChatId}
-                onChange={(e) => setTelegramChatId(e.target.value)}
-                placeholder="-100123456789"
-              />
-              <p className="text-xs text-muted-foreground">
-                The chat/group ID where Titus (Clawdbot) listens for messages.
-              </p>
-            </div>
-            <div className="space-y-2 pt-2 border-t">
-              <p className="text-sm font-medium">Webhook Setup</p>
-              <p className="text-xs text-muted-foreground">
-                To receive responses from Titus, you need to configure a webhook.
-                Add these environment variables to your Vercel deployment:
-              </p>
-              <div className="bg-muted rounded-md p-3 text-xs font-mono space-y-1">
-                <div>TELEGRAM_BOT_TOKEN=your_bot_token</div>
-                <div>TELEGRAM_CHAT_ID=your_chat_id</div>
-                <div>TELEGRAM_WEBHOOK_SECRET=your_secret</div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Then set up the webhook by calling the setup endpoint after deployment.
-              </p>
-            </div>
-          </div>
-        );
     }
   };
 
@@ -755,9 +578,7 @@ export function ConnectorsPanel({ trigger, collapsed }: ConnectorsPanelProps) {
               )}
             </DialogTitle>
             <DialogDescription>
-              {configuring === "neon"
-                ? "Neon database connection is managed via environment variables."
-                : "Enter your credentials to connect this service."}
+              Enter your credentials to connect this service.
             </DialogDescription>
           </DialogHeader>
 
@@ -792,41 +613,25 @@ export function ConnectorsPanel({ trigger, collapsed }: ConnectorsPanelProps) {
               </Button>
             )}
             <div className="flex gap-2 w-full sm:w-auto">
-              {configuring !== "neon" && (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => configuring && handleSaveConfig(configuring)}
-                    disabled={saving}
-                    className="flex-1 sm:flex-none"
-                  >
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                    Save
-                  </Button>
-                  <Button
-                    onClick={() => configuring && handleTestConnection(configuring)}
-                    disabled={testing !== null}
-                    className="flex-1 sm:flex-none"
-                  >
-                    {testing === configuring ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : null}
-                    Test Connection
-                  </Button>
-                </>
-              )}
-              {configuring === "neon" && (
-                <Button
-                  onClick={() => configuring && handleTestConnection(configuring)}
-                  disabled={testing !== null}
-                  className="w-full"
-                >
-                  {testing === configuring ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : null}
-                  Test Connection
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                onClick={() => configuring && handleSaveConfig(configuring)}
+                disabled={saving}
+                className="flex-1 sm:flex-none"
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Save
+              </Button>
+              <Button
+                onClick={() => configuring && handleTestConnection(configuring)}
+                disabled={testing !== null}
+                className="flex-1 sm:flex-none"
+              >
+                {testing === configuring ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Test Connection
+              </Button>
             </div>
           </DialogFooter>
         </DialogContent>

@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, Eye, EyeOff, Server, Bot, Cloud, Moon, Sun } from "lucide-react";
+import { Save, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -17,23 +16,11 @@ export function SettingsPage() {
 
   // Local state for form
   const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
-  const [ollamaUrl, setOllamaUrl] = useState("http://localhost:11434");
-  const [anthropicKey, setAnthropicKey] = useState("");
-  const [openaiKey, setOpenaiKey] = useState("");
-  const [defaultModel, setDefaultModel] = useState("");
-
-  // Password visibility
-  const [showAnthropicKey, setShowAnthropicKey] = useState(false);
-  const [showOpenaiKey, setShowOpenaiKey] = useState(false);
 
   // Sync local state with loaded settings
   useEffect(() => {
     if (settings) {
       if (settings.theme) setTheme(settings.theme as "light" | "dark" | "system");
-      if (settings.ollama_base_url) setOllamaUrl(settings.ollama_base_url);
-      if (settings.anthropic_api_key) setAnthropicKey(settings.anthropic_api_key);
-      if (settings.openai_api_key) setOpenaiKey(settings.openai_api_key);
-      if (settings.default_model) setDefaultModel(settings.default_model);
     }
   }, [settings]);
 
@@ -41,10 +28,6 @@ export function SettingsPage() {
     try {
       await updateSettings.mutateAsync({
         theme,
-        ollama_base_url: ollamaUrl,
-        anthropic_api_key: anthropicKey || undefined,
-        openai_api_key: openaiKey || undefined,
-        default_model: defaultModel || undefined,
       });
       toast.success("Settings saved", "Your settings have been updated successfully");
     } catch (error) {
@@ -111,157 +94,6 @@ export function SettingsPage() {
                 </Button>
               ))}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Ollama Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Server className="h-5 w-5" />
-            Ollama (Local)
-          </CardTitle>
-          <CardDescription>
-            Configure your local Ollama instance for running models on your machine.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="ollama-url">Base URL</Label>
-            <Input
-              id="ollama-url"
-              value={ollamaUrl}
-              onChange={(e) => setOllamaUrl(e.target.value)}
-              placeholder="http://localhost:11434"
-            />
-            <p className="text-xs text-muted-foreground">
-              The URL where Ollama is running. Default is http://localhost:11434
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Anthropic Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bot className="h-5 w-5" />
-            Anthropic (Claude)
-          </CardTitle>
-          <CardDescription>
-            Connect to Claude models via the Anthropic API.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="anthropic-key">API Key</Label>
-            <div className="relative">
-              <Input
-                id="anthropic-key"
-                type={showAnthropicKey ? "text" : "password"}
-                value={anthropicKey}
-                onChange={(e) => setAnthropicKey(e.target.value)}
-                placeholder="sk-ant-..."
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowAnthropicKey(!showAnthropicKey)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                {showAnthropicKey ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Get your API key from{" "}
-              <a
-                href="https://console.anthropic.com/settings/keys"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-foreground"
-              >
-                console.anthropic.com
-              </a>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* OpenAI Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Cloud className="h-5 w-5" />
-            OpenAI
-          </CardTitle>
-          <CardDescription>
-            Connect to GPT models via the OpenAI API.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="openai-key">API Key</Label>
-            <div className="relative">
-              <Input
-                id="openai-key"
-                type={showOpenaiKey ? "text" : "password"}
-                value={openaiKey}
-                onChange={(e) => setOpenaiKey(e.target.value)}
-                placeholder="sk-..."
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowOpenaiKey(!showOpenaiKey)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                {showOpenaiKey ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Get your API key from{" "}
-              <a
-                href="https://platform.openai.com/api-keys"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-foreground"
-              >
-                platform.openai.com
-              </a>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Default Model */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Defaults</CardTitle>
-          <CardDescription>
-            Set default preferences for new conversations.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="default-model">Default Model</Label>
-            <Input
-              id="default-model"
-              value={defaultModel}
-              onChange={(e) => setDefaultModel(e.target.value)}
-              placeholder="e.g., claude-3-5-sonnet-20241022"
-            />
-            <p className="text-xs text-muted-foreground">
-              The model to use by default when starting new conversations.
-            </p>
           </div>
         </CardContent>
       </Card>

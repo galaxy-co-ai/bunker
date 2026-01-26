@@ -53,29 +53,6 @@ export const documents = pgTable("documents", {
   updatedAt: timestamp("updated_at").notNull(),
 });
 
-// Task 23: Conversations table
-export const conversations = pgTable("conversations", {
-  id: text("id").primaryKey(),
-  projectId: text("project_id")
-    .notNull()
-    .references(() => projects.id, { onDelete: "cascade" }),
-  title: text("title"),
-  modelId: text("model_id"),
-  createdAt: timestamp("created_at").notNull(),
-  updatedAt: timestamp("updated_at").notNull(),
-});
-
-// Task 23: Messages table
-export const messages = pgTable("messages", {
-  id: text("id").primaryKey(),
-  conversationId: text("conversation_id")
-    .notNull()
-    .references(() => conversations.id, { onDelete: "cascade" }),
-  role: text("role", { enum: ["user", "assistant", "system"] }).notNull(),
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").notNull(),
-});
-
 // Task 24: Secrets table
 export const secrets = pgTable("secrets", {
   id: text("id").primaryKey(),
@@ -107,12 +84,6 @@ export type NewTask = typeof tasks.$inferInsert;
 
 export type Document = typeof documents.$inferSelect;
 export type NewDocument = typeof documents.$inferInsert;
-
-export type Conversation = typeof conversations.$inferSelect;
-export type NewConversation = typeof conversations.$inferInsert;
-
-export type Message = typeof messages.$inferSelect;
-export type NewMessage = typeof messages.$inferInsert;
 
 export type Secret = typeof secrets.$inferSelect;
 export type NewSecret = typeof secrets.$inferInsert;

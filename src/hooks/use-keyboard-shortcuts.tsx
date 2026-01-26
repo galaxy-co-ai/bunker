@@ -58,16 +58,6 @@ export function useKeyboardShortcuts() {
       },
       description: "Go to sprints",
     },
-    {
-      key: "3",
-      ctrl: true,
-      handler: () => {
-        if (activeProjectId) {
-          router.push(`/projects/${activeProjectId}/chat`);
-        }
-      },
-      description: "Go to chat",
-    },
   ];
 
   const handleKeyDown = useCallback(

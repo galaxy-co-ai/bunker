@@ -14,7 +14,6 @@ import {
   Clock,
   Folder,
   FolderOpen,
-  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -26,7 +25,6 @@ import { useSprints } from "@/hooks/use-sprints";
 import { useTasks } from "@/hooks/use-tasks";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Sprint, Task } from "@/lib/db/schema";
-import { PanelChat } from "@/components/chat/panel-chat";
 
 const MIN_WIDTH = 280;
 const MAX_WIDTH = 600;
@@ -38,7 +36,6 @@ export function ContextPanel() {
   const { activeProjectId } = useProjectStore();
   const [isResizing, setIsResizing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>("task");
-  const [chatExpanded, setChatExpanded] = useState(true);
   const panelRef = useRef<HTMLElement>(null);
 
   const startResizing = useCallback((e: React.MouseEvent) => {
@@ -165,41 +162,10 @@ export function ContextPanel() {
             <Separator />
 
             {/* Content */}
-            <div className={cn(
-              "overflow-y-auto p-4",
-              chatExpanded ? "flex-1 min-h-0" : "flex-1"
-            )}>
+            <div className="flex-1 overflow-y-auto p-4">
               {activeTab === "task" && <CurrentTaskView projectId={activeProjectId} />}
               {activeTab === "sprint" && <SprintTasksView projectId={activeProjectId} />}
               {activeTab === "map" && <ProjectMapView projectId={activeProjectId} />}
-            </div>
-
-            {/* Chat Section */}
-            <div className={cn(
-              "border-t border-border flex flex-col transition-all",
-              chatExpanded ? "h-[280px]" : "h-9"
-            )}>
-              {/* Chat Toggle Header */}
-              <button
-                onClick={() => setChatExpanded(!chatExpanded)}
-                className="flex items-center justify-between px-4 py-2 hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  <span className="text-xs font-medium">AI Assistant</span>
-                </div>
-                <ChevronDown
-                  className={cn(
-                    "h-3.5 w-3.5 text-muted-foreground transition-transform",
-                    !chatExpanded && "-rotate-180"
-                  )}
-                />
-              </button>
-              {chatExpanded && (
-                <div className="flex-1 min-h-0">
-                  <PanelChat projectId={activeProjectId} />
-                </div>
-              )}
             </div>
           </>
         )}

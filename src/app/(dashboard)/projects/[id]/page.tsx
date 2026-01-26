@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowRight, MessageSquare, Pencil, Trash2 } from "lucide-react";
+import { ArrowRight, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProject } from "@/hooks/use-projects";
@@ -81,12 +81,6 @@ export default function ProjectPage() {
               <Button variant="outline" size="sm">
                 Sprints
                 <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href={`/projects/${projectId}/chat`}>
-              <Button variant="outline" size="sm">
-                <MessageSquare className="mr-1 h-4 w-4" />
-                Chat
               </Button>
             </Link>
             <EditProjectDialog
