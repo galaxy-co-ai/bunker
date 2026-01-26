@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { EditableFileTree } from "@/components/context/editable-file-tree";
 
 interface ProjectActionsProps {
   projectId: string;
@@ -135,8 +136,31 @@ export function ProjectActions({ projectId, projectName, projectPath }: ProjectA
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      // For now, just show a success message - actual export logic can be added
-      toast.success("Export started", "Your project files are being prepared for download");
+      const response = await fetch(`/api/projects/${projectId}/export`);
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error?.message || "Export failed");
+      }
+
+      // Get the blob and trigger download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+
+      // Extract filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get("Content-Disposition");
+      const filenameMatch = contentDisposition?.match(/filename="?([^"]+)"?/);
+      const filename = filenameMatch?.[1] || `${projectName.replace(/[^a-zA-Z0-9-_]/g, "_")}_export.zip`;
+
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success("Export complete", "Your project has been downloaded");
       setExportOpen(false);
     } catch (error) {
       toast.error("Export failed", error instanceof Error ? error.message : "Unknown error");
@@ -256,27 +280,19 @@ export function ProjectActions({ projectId, projectName, projectPath }: ProjectA
 
       {/* Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Edit File Tree</DialogTitle>
             <DialogDescription>
-              Manage your project structure and organize files.
+              Manage your project structure - rename, create folders, or delete files.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="rounded-md border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-              <p>File tree editing coming soon.</p>
-              <ul className="mt-2 list-disc list-inside space-y-1">
-                <li>Rename files and folders</li>
-                <li>Move items between folders</li>
-                <li>Create new folders</li>
-                <li>Delete files</li>
-              </ul>
-            </div>
+          <div className="py-2">
+            <EditableFileTree projectId={projectId} onClose={() => setEditOpen(false)} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)}>
-              Close
+              Done
             </Button>
           </DialogFooter>
         </DialogContent>

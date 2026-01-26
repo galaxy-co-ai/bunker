@@ -41,15 +41,32 @@ export async function isClawdbotAvailable(): Promise<boolean> {
   const baseURL = process.env.CLAWDBOT_GATEWAY_URL || "http://127.0.0.1:18789";
   const apiKey = process.env.CLAWDBOT_GATEWAY_TOKEN || "";
 
+  // If no gateway URL is configured, Clawdbot is not available
+  if (!process.env.CLAWDBOT_GATEWAY_URL) {
+    return false;
+  }
+
   try {
-    const response = await fetch(`${baseURL}/v1/models`, {
-      method: "GET",
+    // Test the chat completions endpoint - a 401 Unauthorized response means the gateway is running
+    // (we just need auth). Any response other than network error means gateway is up.
+    const response = await fetch(`${baseURL}/v1/chat/completions`, {
+      method: "POST",
       headers: {
+        "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
+      body: JSON.stringify({
+        model: "clawdbot:main",
+        messages: [{ role: "user", content: "ping" }],
+        max_tokens: 1,
+      }),
     });
-    return response.ok;
+
+    // 200 = success, 401 = auth needed (gateway running), 4xx = gateway running
+    // Only false if we can't reach it at all
+    return response.status !== 502 && response.status !== 503 && response.status !== 504;
   } catch {
+    // Network error - gateway not reachable
     return false;
   }
 }

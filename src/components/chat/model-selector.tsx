@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Bot, Cloud, Server } from "lucide-react";
+import { ChevronDown, Bot, Cloud, Server, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,12 +24,14 @@ const providerIcons = {
   ollama: Server,
   anthropic: Bot,
   openai: Cloud,
+  clawdbot: Sparkles,
 };
 
 const providerLabels = {
   ollama: "Local (Ollama)",
   anthropic: "Anthropic",
   openai: "OpenAI",
+  clawdbot: "Clawdbot",
 };
 
 export function ModelSelector({ selectedModelId, onSelectModel }: ModelSelectorProps) {
@@ -52,6 +54,7 @@ export function ModelSelector({ selectedModelId, onSelectModel }: ModelSelectorP
   const selectedModel = models.find((m) => m.id === selectedModelId);
 
   // Group models by provider
+  const clawdbotModels = availableModels.filter((m) => m.provider === "clawdbot");
   const ollamaModels = availableModels.filter((m) => m.provider === "ollama");
   const anthropicModels = availableModels.filter((m) => m.provider === "anthropic");
   const openaiModels = availableModels.filter((m) => m.provider === "openai");
@@ -75,13 +78,13 @@ export function ModelSelector({ selectedModelId, onSelectModel }: ModelSelectorP
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
-        {ollamaModels.length > 0 && (
+        {clawdbotModels.length > 0 && (
           <DropdownMenuGroup>
             <DropdownMenuLabel className="flex items-center gap-2">
-              <Server className="h-4 w-4" />
-              {providerLabels.ollama}
+              <Sparkles className="h-4 w-4 text-primary" />
+              {providerLabels.clawdbot}
             </DropdownMenuLabel>
-            {ollamaModels.map((model) => (
+            {clawdbotModels.map((model) => (
               <DropdownMenuItem
                 key={model.id}
                 onClick={() => onSelectModel(model.id)}
@@ -100,9 +103,37 @@ export function ModelSelector({ selectedModelId, onSelectModel }: ModelSelectorP
           </DropdownMenuGroup>
         )}
 
+        {ollamaModels.length > 0 && (
+          <>
+            {clawdbotModels.length > 0 && <DropdownMenuSeparator />}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="flex items-center gap-2">
+                <Server className="h-4 w-4" />
+                {providerLabels.ollama}
+              </DropdownMenuLabel>
+              {ollamaModels.map((model) => (
+                <DropdownMenuItem
+                  key={model.id}
+                  onClick={() => onSelectModel(model.id)}
+                  className="cursor-pointer"
+                >
+                  <div className="flex flex-col">
+                    <span>{model.name}</span>
+                    {model.description && (
+                      <span className="text-xs text-muted-foreground">
+                        {model.description}
+                      </span>
+                    )}
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </>
+        )}
+
         {anthropicModels.length > 0 && (
           <>
-            {ollamaModels.length > 0 && <DropdownMenuSeparator />}
+            {(clawdbotModels.length > 0 || ollamaModels.length > 0) && <DropdownMenuSeparator />}
             <DropdownMenuGroup>
               <DropdownMenuLabel className="flex items-center gap-2">
                 <Bot className="h-4 w-4" />
@@ -130,7 +161,7 @@ export function ModelSelector({ selectedModelId, onSelectModel }: ModelSelectorP
 
         {openaiModels.length > 0 && (
           <>
-            {(ollamaModels.length > 0 || anthropicModels.length > 0) && (
+            {(clawdbotModels.length > 0 || ollamaModels.length > 0 || anthropicModels.length > 0) && (
               <DropdownMenuSeparator />
             )}
             <DropdownMenuGroup>
