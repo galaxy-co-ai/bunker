@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FolderKanban } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,16 @@ export function ProjectList({ collapsed = false }: ProjectListProps) {
   const router = useRouter();
   const { data: projects, isLoading, error } = useProjects();
   const { activeProjectId, setActiveProjectId } = useProjectStore();
+
+  // Clear stale activeProjectId if it's not in the projects list
+  useEffect(() => {
+    if (!isLoading && projects && activeProjectId) {
+      const projectExists = projects.some((p) => p.id === activeProjectId);
+      if (!projectExists) {
+        setActiveProjectId(null);
+      }
+    }
+  }, [projects, isLoading, activeProjectId, setActiveProjectId]);
 
   const handleProjectClick = (projectId: string) => {
     setActiveProjectId(projectId);
