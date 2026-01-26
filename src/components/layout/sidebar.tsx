@@ -20,6 +20,7 @@ import { useProjects } from "@/hooks/use-projects";
 import { useProjectStore } from "@/stores/project-store";
 import { NewProjectDialog } from "@/components/projects/new-project-dialog";
 import { ProjectFilesSync } from "@/components/projects/project-files-sync";
+import { ProjectNewMenu } from "@/components/projects/project-new-menu";
 import { ConnectorsPanel } from "@/components/connectors/connectors-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -91,6 +92,12 @@ export function Sidebar() {
                       <FolderKanban className="h-4 w-4 text-primary" />
                     </div>
                   )}
+                </div>
+                <div className={cn("pb-2", sidebarOpen ? "px-4 flex justify-center" : "flex justify-center")}>
+                  <ProjectNewMenu
+                    projectId={activeProject.id}
+                    collapsed={!sidebarOpen}
+                  />
                 </div>
                 <ProjectFilesSync
                   projectId={activeProject.id}
