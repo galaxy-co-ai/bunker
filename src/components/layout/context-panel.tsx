@@ -10,8 +10,10 @@ import { useUIStore } from "@/stores/ui-store";
 import { useProjectStore } from "@/stores/project-store";
 import { DocList } from "@/components/context/doc-list";
 import { DocViewer } from "@/components/context/doc-viewer";
+import { DocUpload } from "@/components/context/doc-upload";
 import { FileTree } from "@/components/context/file-tree";
 import { SprintSummary } from "@/components/context/sprint-summary";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Document } from "@/lib/db/schema";
 
 export function ContextPanel() {
@@ -19,9 +21,14 @@ export function ContextPanel() {
   const { activeProjectId } = useProjectStore();
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [activeTab, setActiveTab] = useState("docs");
+  const queryClient = useQueryClient();
 
   const handleSelectDoc = (doc: Document) => {
     setSelectedDoc(doc);
+  };
+
+  const handleUploadComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ["documents", activeProjectId] });
   };
 
   return (
@@ -96,7 +103,13 @@ export function ContextPanel() {
                     </div>
                   </div>
                 ) : (
-                  <div className="h-full overflow-y-auto">
+                  <div className="h-full overflow-y-auto space-y-4">
+                    {activeProjectId && (
+                      <DocUpload
+                        projectId={activeProjectId}
+                        onUploadComplete={handleUploadComplete}
+                      />
+                    )}
                     <DocList
                       projectId={activeProjectId}
                       selectedDocId={null}
