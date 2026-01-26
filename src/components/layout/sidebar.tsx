@@ -72,7 +72,7 @@ export function Sidebar() {
 
       <Separator />
 
-      {/* Active Project Info */}
+      {/* Active Project Actions */}
       {activeProjectId && projects && (
         <>
           {(() => {
@@ -80,23 +80,10 @@ export function Sidebar() {
             if (!activeProject) return null;
             return (
               <>
-                <div className="p-4 pb-1">
-                  {sidebarOpen ? (
-                    <div className="text-center" title={activeProject.path || undefined}>
-                      <h2 className="font-semibold text-lg truncate cursor-default">
-                        {activeProject.name}
-                      </h2>
-                    </div>
-                  ) : (
-                    <div className="flex justify-center" title={activeProject.path || undefined}>
-                      <FolderKanban className="h-4 w-4 text-primary" />
-                    </div>
-                  )}
-                </div>
                 {/* Action Button Group */}
                 <div className={cn(
-                  "pb-2",
-                  sidebarOpen ? "px-4 flex justify-center" : "px-2"
+                  "py-3",
+                  sidebarOpen ? "px-4 flex justify-center" : "px-2 flex justify-center"
                 )}>
                   <ProjectActions
                     projectId={activeProject.id}
@@ -107,7 +94,7 @@ export function Sidebar() {
 
                 {/* File Tree - shows directly when path exists and has files */}
                 {sidebarOpen && activeProject.path && (
-                  <div className="px-4 pt-2 max-h-48 overflow-y-auto">
+                  <div className="px-4 pb-2 max-h-48 overflow-y-auto">
                     <FileTree projectId={activeProject.id} />
                   </div>
                 )}

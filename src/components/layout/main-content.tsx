@@ -1,6 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useProjects } from "@/hooks/use-projects";
+import { useProjectStore } from "@/stores/project-store";
 
 interface MainContentProps {
   children: React.ReactNode;
@@ -8,6 +10,10 @@ interface MainContentProps {
 }
 
 export function MainContent({ children, className }: MainContentProps) {
+  const { data: projects } = useProjects();
+  const { activeProjectId } = useProjectStore();
+  const activeProject = projects?.find((p) => p.id === activeProjectId);
+
   return (
     <main
       className={cn(
@@ -25,8 +31,21 @@ export function MainContent({ children, className }: MainContentProps) {
             "radial-gradient(ellipse 60% 60% at 50% 50%, #000 30%, transparent 70%)",
         }}
       />
-      <div className="relative z-10 h-full w-full">
-        {children}
+      <div className="relative z-10 h-full w-full flex flex-col">
+        {/* Project Title Header */}
+        {activeProject && (
+          <div className="flex h-14 items-center justify-center border-b border-border/50 bg-background/80 backdrop-blur-sm">
+            <h1
+              className="font-semibold text-xl truncate px-4 cursor-default"
+              title={activeProject.path || undefined}
+            >
+              {activeProject.name}
+            </h1>
+          </div>
+        )}
+        <div className="flex-1 overflow-y-auto">
+          {children}
+        </div>
       </div>
     </main>
   );
