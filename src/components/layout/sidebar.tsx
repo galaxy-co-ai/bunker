@@ -81,16 +81,13 @@ export function Sidebar() {
               <>
                 <div className="p-4 pb-2">
                   {sidebarOpen ? (
-                    <>
-                      <h2 className="font-semibold text-sm truncate">{activeProject.name}</h2>
-                      {activeProject.path && (
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          {activeProject.path}
-                        </p>
-                      )}
-                    </>
+                    <div className="text-center" title={activeProject.path || undefined}>
+                      <h2 className="font-semibold text-base truncate cursor-default">
+                        {activeProject.name}
+                      </h2>
+                    </div>
                   ) : (
-                    <div className="flex justify-center">
+                    <div className="flex justify-center" title={activeProject.path || undefined}>
                       <FolderKanban className="h-4 w-4 text-primary" />
                     </div>
                   )}
