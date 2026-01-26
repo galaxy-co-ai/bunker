@@ -19,9 +19,7 @@ import { useUIStore } from "@/stores/ui-store";
 import { useProjects } from "@/hooks/use-projects";
 import { useProjectStore } from "@/stores/project-store";
 import { NewProjectDialog } from "@/components/projects/new-project-dialog";
-import { ProjectFilesSync } from "@/components/projects/project-files-sync";
-import { ProjectNewMenu } from "@/components/projects/project-new-menu";
-import { ProjectSettings } from "@/components/projects/project-settings";
+import { ProjectActions } from "@/components/projects/project-actions";
 import { ConnectorsPanel } from "@/components/connectors/connectors-panel";
 import { FileTree } from "@/components/context/file-tree";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -95,48 +93,16 @@ export function Sidebar() {
                     </div>
                   )}
                 </div>
-                {/* Action Tab Bar: minimal icons */}
+                {/* Action Button Group */}
                 <div className={cn(
                   "pb-2",
-                  sidebarOpen ? "px-4 flex justify-center" : "flex flex-col items-center gap-0.5"
+                  sidebarOpen ? "px-4 flex justify-center" : "px-2"
                 )}>
-                  {sidebarOpen ? (
-                    <div className="inline-flex items-center rounded border border-border/50 bg-muted/30 p-px">
-                      <ProjectNewMenu
-                        projectId={activeProject.id}
-                        collapsed={true}
-                      />
-                      <ProjectFilesSync
-                        projectId={activeProject.id}
-                        projectPath={activeProject.path}
-                        collapsed={true}
-                      />
-                      <ProjectSettings
-                        projectId={activeProject.id}
-                        projectName={activeProject.name}
-                        projectPath={activeProject.path}
-                        collapsed={true}
-                      />
-                    </div>
-                  ) : (
-                    <>
-                      <ProjectNewMenu
-                        projectId={activeProject.id}
-                        collapsed={true}
-                      />
-                      <ProjectFilesSync
-                        projectId={activeProject.id}
-                        projectPath={activeProject.path}
-                        collapsed={true}
-                      />
-                      <ProjectSettings
-                        projectId={activeProject.id}
-                        projectName={activeProject.name}
-                        projectPath={activeProject.path}
-                        collapsed={true}
-                      />
-                    </>
-                  )}
+                  <ProjectActions
+                    projectId={activeProject.id}
+                    projectName={activeProject.name}
+                    projectPath={activeProject.path}
+                  />
                 </div>
 
                 {/* File Tree - shows directly when path exists and has files */}
