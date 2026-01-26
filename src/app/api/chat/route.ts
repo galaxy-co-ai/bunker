@@ -46,7 +46,13 @@ async function getApiKey(provider: Provider): Promise<string | null> {
     return process.env.CLAWDBOT_GATEWAY_TOKEN || "clawdbot";
   }
 
-  // First check settings table (backwards compatible)
+  // First check env vars (highest priority for deployment)
+  const envKeyName = provider === "anthropic" ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY";
+  if (process.env[envKeyName]) {
+    return process.env[envKeyName]!;
+  }
+
+  // Then check settings table (backwards compatible)
   const keyName = provider === "anthropic" ? "anthropic_api_key" : "openai_api_key";
   const [setting] = await db
     .select()

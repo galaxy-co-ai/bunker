@@ -19,7 +19,7 @@ export async function GET() {
   try {
     const models: ModelInfo[] = [];
 
-    // Check for API keys in settings
+    // Check for API keys in settings OR env vars
     const [anthropicKeySetting] = await db
       .select()
       .from(settings)
@@ -30,8 +30,9 @@ export async function GET() {
       .from(settings)
       .where(eq(settings.key, "openai_api_key"));
 
-    const hasAnthropicKey = !!anthropicKeySetting?.value;
-    const hasOpenAIKey = !!openaiKeySetting?.value;
+    // Check both database settings and env vars
+    const hasAnthropicKey = !!anthropicKeySetting?.value || !!process.env.ANTHROPIC_API_KEY;
+    const hasOpenAIKey = !!openaiKeySetting?.value || !!process.env.OPENAI_API_KEY;
 
     // Get Ollama models (always check, as it's local)
     const ollamaAvailable = await isOllamaAvailable();
