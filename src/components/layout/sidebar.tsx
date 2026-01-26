@@ -81,10 +81,10 @@ export function Sidebar() {
             if (!activeProject) return null;
             return (
               <>
-                <div className="p-4 pb-2">
+                <div className="p-4 pb-1">
                   {sidebarOpen ? (
                     <div className="text-center" title={activeProject.path || undefined}>
-                      <h2 className="font-semibold text-base truncate cursor-default">
+                      <h2 className="font-semibold text-lg truncate cursor-default">
                         {activeProject.name}
                       </h2>
                     </div>
@@ -97,10 +97,10 @@ export function Sidebar() {
                 {/* Action Tab Bar: minimal icons */}
                 <div className={cn(
                   "pb-2",
-                  sidebarOpen ? "px-4 flex justify-center" : "flex flex-col items-center gap-1"
+                  sidebarOpen ? "px-4 flex justify-center" : "flex flex-col items-center gap-0.5"
                 )}>
                   {sidebarOpen ? (
-                    <div className="inline-flex items-center rounded-md border border-border bg-muted/50 p-0.5">
+                    <div className="inline-flex items-center rounded border border-border/50 bg-muted/30 p-px">
                       <ProjectNewMenu
                         projectId={activeProject.id}
                         collapsed={true}
