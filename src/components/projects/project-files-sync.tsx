@@ -1,72 +1,58 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { Upload, RefreshCw, Loader2, FolderSync, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
+import { FolderSync, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ProjectFilesSyncProps {
   projectId: string;
   projectPath: string | null;
   collapsed?: boolean;
+  onSyncComplete?: () => void;
 }
 
-interface FileTree {
-  name: string;
-  path: string;
-  type: "file" | "directory";
-  children?: FileTree[];
-}
-
-function countFiles(tree: FileTree): number {
-  if (tree.type === "file") return 1;
-  let count = 0;
-  for (const child of tree.children || []) {
-    count += countFiles(child);
-  }
-  return count;
-}
-
-export function ProjectFilesSync({ projectId, projectPath, collapsed }: ProjectFilesSyncProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+export function ProjectFilesSync({ projectId, projectPath, collapsed, onSyncComplete }: ProjectFilesSyncProps) {
+  const [open, setOpen] = useState(false);
+  const [path, setPath] = useState(projectPath || "");
   const [isSyncing, setIsSyncing] = useState(false);
-  const [hasFiles, setHasFiles] = useState(false);
-  const [fileCount, setFileCount] = useState(0);
-
-  // Check if project has files
-  useEffect(() => {
-    async function checkFiles() {
-      if (!projectPath) {
-        setIsLoading(false);
-        setHasFiles(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/projects/${projectId}/files`);
-        if (response.ok) {
-          const data = await response.json();
-          const count = countFiles(data.tree);
-          setFileCount(count);
-          setHasFiles(count > 0);
-        } else {
-          setHasFiles(false);
-        }
-      } catch {
-        setHasFiles(false);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    checkFiles();
-  }, [projectId, projectPath]);
+  const queryClient = useQueryClient();
 
   const handleSync = async () => {
+    if (!path.trim()) {
+      toast.error("Error", "Please enter a directory path");
+      return;
+    }
+
     setIsSyncing(true);
     try {
+      // First, update the project path if it changed
+      if (path !== projectPath) {
+        const updateResponse = await fetch(`/api/projects/${projectId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: path.trim() }),
+        });
+
+        if (!updateResponse.ok) {
+          const data = await updateResponse.json();
+          throw new Error(data.error?.message || "Failed to update project path");
+        }
+      }
+
+      // Then trigger auto-organize
       const response = await fetch(`/api/projects/${projectId}/auto-organize`, {
         method: "POST",
       });
@@ -80,8 +66,16 @@ export function ProjectFilesSync({ projectId, projectPath, collapsed }: ProjectF
       const importedCount = data.organized?.length || 0;
       toast.success(
         "Sync complete",
-        `${importedCount} document${importedCount !== 1 ? "s" : ""} imported`
+        `${importedCount} document${importedCount !== 1 ? "s" : ""} organized`
       );
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["files", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["documents", projectId] });
+
+      setOpen(false);
+      onSyncComplete?.();
     } catch (error) {
       toast.error("Sync failed", error instanceof Error ? error.message : "Unknown error");
     } finally {
@@ -89,163 +83,92 @@ export function ProjectFilesSync({ projectId, projectPath, collapsed }: ProjectF
     }
   };
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback(
-    async (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(false);
-
-      const files = Array.from(e.dataTransfer.files);
-      if (files.length === 0) return;
-
-      await uploadFiles(files);
-    },
-    [projectId]
-  );
-
-  const handleFileSelect = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files || []);
-      if (files.length > 0) {
-        await uploadFiles(files);
-      }
-      e.target.value = "";
-    },
-    [projectId]
-  );
-
-  const uploadFiles = async (files: File[]) => {
-    setIsSyncing(true);
-    try {
-      const formData = new FormData();
-      for (const file of files) {
-        formData.append("files", file);
-      }
-
-      const response = await fetch(`/api/projects/${projectId}/documents/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error?.message || "Upload failed");
-      }
-
-      const successCount = data.results?.filter((r: { success: boolean }) => r.success).length || 0;
-      toast.success(
-        "Upload complete",
-        `${successCount} file${successCount !== 1 ? "s" : ""} added`
-      );
-
-      setHasFiles(true);
-    } catch (error) {
-      toast.error("Upload failed", error instanceof Error ? error.message : "Unknown error");
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="p-4 flex justify-center">
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  // Collapsed view
+  // Collapsed view - just icon button
   if (collapsed) {
     return (
-      <div className="p-2 flex justify-center">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={hasFiles ? handleSync : undefined}
-          disabled={isSyncing}
-          className="h-8 w-8"
-        >
-          {isSyncing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : hasFiles ? (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
             <FolderSync className="h-4 w-4" />
-          ) : (
-            <Upload className="h-4 w-4" />
-          )}
-        </Button>
-      </div>
+          </Button>
+        </DialogTrigger>
+        <SyncDialogContent
+          path={path}
+          setPath={setPath}
+          isSyncing={isSyncing}
+          onSync={handleSync}
+          onCancel={() => setOpen(false)}
+        />
+      </Dialog>
     );
   }
 
-  // Has files - show sync button
-  if (hasFiles && projectPath) {
-    return (
-      <div className="px-4 pb-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleSync}
-          disabled={isSyncing}
-          className="w-full justify-start gap-2"
-        >
-          {isSyncing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <FolderSync className="h-4 w-4" />
-          )}
-          <span>Sync Files</span>
-          <span className="ml-auto text-xs text-muted-foreground">{fileCount}</span>
-        </Button>
-      </div>
-    );
-  }
-
-  // No files - show upload dropzone
   return (
-    <div className="px-4 pb-4">
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={cn(
-          "flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-3 transition-colors",
-          isDragging
-            ? "border-primary bg-primary/5"
-            : "border-muted-foreground/25 hover:border-muted-foreground/50",
-          isSyncing && "pointer-events-none opacity-50"
-        )}
-      >
-        {isSyncing ? (
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        ) : (
-          <Upload className="h-5 w-5 text-muted-foreground" />
-        )}
-        <p className="mt-1.5 text-xs text-muted-foreground text-center">
-          Drop files or{" "}
-          <label className="cursor-pointer text-primary hover:underline">
-            browse
-            <input
-              type="file"
-              multiple
-              onChange={handleFileSelect}
-              className="sr-only"
-            />
-          </label>
-        </p>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-1.5">
+          <FolderSync className="h-4 w-4" />
+          <span>Sync</span>
+        </Button>
+      </DialogTrigger>
+      <SyncDialogContent
+        path={path}
+        setPath={setPath}
+        isSyncing={isSyncing}
+        onSync={handleSync}
+        onCancel={() => setOpen(false)}
+      />
+    </Dialog>
+  );
+}
+
+interface SyncDialogContentProps {
+  path: string;
+  setPath: (path: string) => void;
+  isSyncing: boolean;
+  onSync: () => void;
+  onCancel: () => void;
+}
+
+function SyncDialogContent({ path, setPath, isSyncing, onSync, onCancel }: SyncDialogContentProps) {
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Sync Project Files</DialogTitle>
+        <DialogDescription>
+          Enter the path to your project directory. AI will automatically organize your files.
+        </DialogDescription>
+      </DialogHeader>
+      <div className="space-y-4 py-4">
+        <div className="space-y-2">
+          <Label htmlFor="project-path">Directory Path</Label>
+          <Input
+            id="project-path"
+            value={path}
+            onChange={(e) => setPath(e.target.value)}
+            placeholder="C:\Users\You\Projects\my-app"
+            onKeyDown={(e) => e.key === "Enter" && onSync()}
+          />
+          <p className="text-xs text-muted-foreground">
+            Enter the full path to your local project folder
+          </p>
+        </div>
       </div>
-    </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onCancel} disabled={isSyncing}>
+          Cancel
+        </Button>
+        <Button onClick={onSync} disabled={isSyncing}>
+          {isSyncing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Syncing...
+            </>
+          ) : (
+            "Sync Files"
+          )}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }

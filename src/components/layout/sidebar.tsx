@@ -97,19 +97,23 @@ export function Sidebar() {
                     </div>
                   )}
                 </div>
-                <div className={cn("pb-2", sidebarOpen ? "px-4 flex justify-center" : "flex justify-center")}>
+                {/* Action Buttons: + New and Sync side by side */}
+                <div className={cn(
+                  "pb-2",
+                  sidebarOpen ? "px-4 flex justify-center gap-2" : "flex flex-col items-center gap-1"
+                )}>
                   <ProjectNewMenu
                     projectId={activeProject.id}
                     collapsed={!sidebarOpen}
                   />
+                  <ProjectFilesSync
+                    projectId={activeProject.id}
+                    projectPath={activeProject.path}
+                    collapsed={!sidebarOpen}
+                  />
                 </div>
-                <ProjectFilesSync
-                  projectId={activeProject.id}
-                  projectPath={activeProject.path}
-                  collapsed={!sidebarOpen}
-                />
 
-                {/* File Tree Section */}
+                {/* File Tree Section - only shows after sync (when path exists) */}
                 {sidebarOpen && activeProject.path && (
                   <div className="px-4 pt-2">
                     <button
