@@ -121,26 +121,9 @@ export function FileTree({ projectId }: FileTreeProps) {
     );
   }
 
-  if (error) {
-    return (
-      <div className="text-sm text-destructive">Failed to load file tree</div>
-    );
-  }
-
-  if (!tree) {
-    return (
-      <div className="text-sm text-muted-foreground">
-        No project path configured. Edit the project to set a path.
-      </div>
-    );
-  }
-
-  if (!tree.children || tree.children.length === 0) {
-    return (
-      <div className="text-sm text-muted-foreground">
-        No files in this directory
-      </div>
-    );
+  // Silent fail - don't show errors, just return null
+  if (error || !tree || !tree.children || tree.children.length === 0) {
+    return null;
   }
 
   return (

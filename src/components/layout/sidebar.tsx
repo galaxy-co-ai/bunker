@@ -5,12 +5,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Box,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronUp,
   FolderKanban,
-  FolderTree,
   Plus,
   Settings,
 } from "lucide-react";
@@ -34,7 +32,6 @@ export function Sidebar() {
   const { data: projects, isLoading } = useProjects();
   const { activeProjectId, setActiveProjectId } = useProjectStore();
   const [projectsExpanded, setProjectsExpanded] = useState(false);
-  const [filesExpanded, setFilesExpanded] = useState(true);
 
   // Clear stale activeProjectId if it's not in the projects list
   useEffect(() => {
@@ -97,42 +94,42 @@ export function Sidebar() {
                     </div>
                   )}
                 </div>
-                {/* Action Buttons: + New and Sync side by side */}
+                {/* Action Tab Bar: minimal icons */}
                 <div className={cn(
                   "pb-2",
-                  sidebarOpen ? "px-4 flex justify-center gap-2" : "flex flex-col items-center gap-1"
+                  sidebarOpen ? "px-4 flex justify-center" : "flex flex-col items-center gap-1"
                 )}>
-                  <ProjectNewMenu
-                    projectId={activeProject.id}
-                    collapsed={!sidebarOpen}
-                  />
-                  <ProjectFilesSync
-                    projectId={activeProject.id}
-                    projectPath={activeProject.path}
-                    collapsed={!sidebarOpen}
-                  />
+                  {sidebarOpen ? (
+                    <div className="inline-flex items-center rounded-md border border-border bg-muted/50 p-0.5">
+                      <ProjectNewMenu
+                        projectId={activeProject.id}
+                        collapsed={true}
+                      />
+                      <ProjectFilesSync
+                        projectId={activeProject.id}
+                        projectPath={activeProject.path}
+                        collapsed={true}
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <ProjectNewMenu
+                        projectId={activeProject.id}
+                        collapsed={true}
+                      />
+                      <ProjectFilesSync
+                        projectId={activeProject.id}
+                        projectPath={activeProject.path}
+                        collapsed={true}
+                      />
+                    </>
+                  )}
                 </div>
 
-                {/* File Tree Section - only shows after sync (when path exists) */}
+                {/* File Tree - shows directly when path exists and has files */}
                 {sidebarOpen && activeProject.path && (
-                  <div className="px-4 pt-2">
-                    <button
-                      onClick={() => setFilesExpanded(!filesExpanded)}
-                      className="flex w-full items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {filesExpanded ? (
-                        <ChevronDown className="h-3 w-3" />
-                      ) : (
-                        <ChevronRight className="h-3 w-3" />
-                      )}
-                      <FolderTree className="h-3 w-3" />
-                      <span>Files</span>
-                    </button>
-                    {filesExpanded && (
-                      <div className="mt-2 max-h-48 overflow-y-auto rounded-md border border-border bg-background/50 p-1">
-                        <FileTree projectId={activeProject.id} />
-                      </div>
-                    )}
+                  <div className="px-4 pt-2 max-h-48 overflow-y-auto">
+                    <FileTree projectId={activeProject.id} />
                   </div>
                 )}
               </>
